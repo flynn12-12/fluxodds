@@ -49,6 +49,8 @@ export default function Home() {
   const [signupPassword, setSignupPassword] = useState('')
   const [userPlan, setUserPlan] = useState('free')
   const [user, setUser] = useState(null)
+  const [liveData, setLiveData] = useState([])
+  const [dataLoading, setDataLoading] = useState(true)
  
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -81,10 +83,27 @@ export default function Home() {
     const t = setInterval(() => setSecs(s => s + 1), 1000)
     return () => clearInterval(t)
   }, [])
+
+  useEffect(() => {
+    const fetchArbs = async () => {
+      try {
+        const res = await fetch('/api/arbs')
+        const data = await res.json()
+        if (data.arbs && data.arbs.length > 0) setLiveData(data.arbs)
+      } catch (e) {
+        console.error('Failed to fetch arbs:', e)
+      } finally {
+        setDataLoading(false)
+      }
+    }
+    fetchArbs()
+    const interval = setInterval(fetchArbs, 30000)
+    return () => clearInterval(interval)
+  }, [])
  
   const scanTime = secs < 60 ? `${secs}s ago` : `${Math.floor(secs/60)}m ago`
  
-  const filtered = DATA.filter(a => {
+  const filtered = (liveData.length > 0 ? liveData : DATA).filter(a => {
     if (sport !== 'all' && a.sport !== sport) return false
     if (a.profit < minP) return false
     if (query && !a.game.toLowerCase().includes(query) && !a.bA.toLowerCase().includes(query) && !a.bB.toLowerCase().includes(query)) return false
