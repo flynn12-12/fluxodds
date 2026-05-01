@@ -613,13 +613,13 @@ const handleForgotPassword = async () => {
         <p className="text-[#5a6a78] text-[17px] max-w-[500px] leading-relaxed font-medium">Start free. Scale when you're profitable. No contracts, cancel anytime.</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-14">
           {[
-            {name:'Starter',price:'0',desc:'For curious bettors wanting to see what arbing is all about.',btn:'Get started free',btnStyle:'border border-[#1e1c16] text-[#eef1f5] hover:border-[#ff6b1a] hover:text-[#ff6b1a]',featured:false,
-              feats:['Up to 5 arbs per day','NBA + NFL only','10 sportsbooks scanned','Basic bet calculator'],
-              off:['No email alerts','No EV bets','No P&L tracker']},
-            {name:'Pro',price:'49',desc:'For serious arbers ready to build real, consistent profit.',btn:'Start 7-day free trial',btnStyle:'bg-[#ff6b1a] text-black hover:bg-[#ff8c42]',featured:true,badge:'Most popular',
-              feats:['Unlimited arbs','All sports covered','40+ sportsbooks','Email + push alerts','+EV bet finder','Middles finder','Full P&L tracker'],off:[]},
-            {name:'Sharp',price:'99',desc:'For high-volume pros who need every edge, no limits.',btn:'Start 7-day free trial',btnStyle:'border border-[#1e1c16] text-[#eef1f5] hover:border-[#ff6b1a] hover:text-[#ff6b1a]',featured:false,
-              feats:['Everything in Pro','API access','Custom alert rules','Advanced filters','Priority speed queue','Dedicated support','Early feature access'],off:[]},
+          {name:'Free',price:'0',desc:'Discover FluxOdds and start finding arbs at no cost.',btn:'Get started free',btnStyle:'border border-[#1e1c16] text-[#eef1f5] hover:border-[#ff6b1a] hover:text-[#ff6b1a]',featured:false,
+              feats:['Unlimited arbs capped at 2%','All sports access','10 sportsbooks scanned','Basic bet calculator','Priority support','Early feature access'],
+              off:['No instant alerts','No +EV bets','No P&L tracker']},
+            {name:'Pro',price:'75',desc:'Full access for serious arbers ready to build real profit.',btn:'Try Pro Free For 3 Days',btnStyle:'bg-[#ff6b1a] text-black hover:bg-[#ff8c42]',featured:true,badge:'Most popular',
+              feats:['Unlimited arbs','All sports covered','40+ sportsbooks','Instant alerts','Full +EV bet finder','Middles finder','Full P&L tracker','3 device limit','Cancel anytime'],off:[]},
+            {name:'Pro Day Pass',price:'15',desc:'All Pro features for 24 hours. Perfect for occasional arbers.',btn:'Coming Soon',btnStyle:'border border-[#1e1c16] text-[#5a6a78]',featured:false,badge:'Coming soon',
+              feats:['All Pro features','24 hour access','One-time purchase','No subscription needed'],off:[]},  
           ].map((p,i) => (
             <div key={i} className={`relative rounded-xl p-9 transition-all hover:-translate-y-[3px] ${p.featured?'border border-[#ff6b1a] bg-[#0f0e0b]':'border border-[#1e1c16] bg-[#0f0e0b] hover:border-[#2a2820]'}`}>
               {p.badge && <div className="absolute -top-[13px] left-1/2 -translate-x-1/2 bg-[#ff6b1a] text-black px-4 py-[3px] rounded-full text-[10px] font-black tracking-wider uppercase whitespace-nowrap">{p.badge}</div>}
