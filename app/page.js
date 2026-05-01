@@ -61,6 +61,9 @@ export default function Home() {
           .eq('user_id', session.user.id)
           .single()
         if (profile) setUserPlan(profile.plan)
+          if (profile) setUserPlan(profile.plan)
+console.log('profile:', profile)
+console.log('userPlan:', profile?.plan)
       }
     })
     supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -69,6 +72,9 @@ export default function Home() {
         const { data: profile } = await supabase
           .from('profiles')
           .select('plan')
+          if (profile) setUserPlan(profile.plan)
+console.log('profile:', profile)
+console.log('userPlan:', profile?.plan)
           .eq('user_id', session.user.id)
           .single()
         if (profile) setUserPlan(profile.plan)
