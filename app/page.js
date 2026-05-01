@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { supabase } from './supabase'
  
 const DATA = [
   {sport:'soccer',game:'PSG vs Bayern',time:'Wed 3:00 PM ET',bA:'Unibet',oA:'+290',bB:'DraftKings',oB:'-335',profit:5.1,sA:54,sB:46,market:'Moneyline'},
@@ -37,13 +38,11 @@ const SPORT_COLORS = {
 }
  
 export default function Home() {
-  const [view, setView] = useState('marketing') // marketing | dashboard
-  const [dashView, setDashView] = useState('home') // home | arb
+  const [view, setView] = useState('marketing')
+  const [dashView, setDashView] = useState('home')
   const [toolName, setToolName] = useState('Prematch Arbitrage')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loginOpen, setLoginOpen] = useState(false)
-  const [signupOpen, setSignupOpen] = useState(false)
-  const [signupDone, setSignupDone] = useState(false)
   const [loginTab, setLoginTab] = useState('login')
   const [selectedArb, setSelectedArb] = useState(null)
   const [bankroll, setBankroll] = useState(100)
@@ -54,7 +53,18 @@ export default function Home() {
   const [secs, setSecs] = useState(0)
   const [contactSent, setContactSent] = useState(false)
   const [signupEmail, setSignupEmail] = useState('')
-
+  const [signupPassword, setSignupPassword] = useState('')
+  const [user, setUser] = useState(null)
+ 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setUser(session.user)
+    })
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null)
+    })
+  }, [])
+ 
   useEffect(() => {
     const t = setInterval(() => setSecs(s => s + 1), 1000)
     return () => clearInterval(t)
@@ -70,10 +80,44 @@ export default function Home() {
   })
  
   const openTool = (name) => {
+    if (!user) { setLoginOpen(true); return }
     setToolName(name)
     setDashView('arb')
     setView('dashboard')
     setSidebarOpen(false)
+  }
+ 
+  const launchDash = () => {
+    if (!user) { setLoginOpen(true); return }
+    setView('dashboard')
+    setDashView('home')
+  }
+ 
+  const handleSignup = async () => {
+    if (!signupEmail || !signupPassword) { alert('Please enter email and password'); return }
+    try {
+      if (loginTab === 'signup') {
+        const { error } = await supabase.auth.signUp({ email: signupEmail, password: signupPassword })
+        if (error) throw error
+        alert('Account created! Check your email to confirm.')
+        setLoginOpen(false)
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email: signupEmail, password: signupPassword })
+        if (error) throw error
+        setUser(data.user)
+        setLoginOpen(false)
+        setView('dashboard')
+        setDashView('home')
+      }
+    } catch (e) {
+      alert(e.message)
+    }
+  }
+ 
+  const handleSignout = async () => {
+    await supabase.auth.signOut()
+    setUser(null)
+    setView('marketing')
   }
  
   const faqs = [
@@ -93,21 +137,7 @@ export default function Home() {
     {id:'freebets', icon:'🎁', name:'Free Bet Converter', desc:'Turn promos into real cash', badge:'PRO', badgeStyle:'bg-sky-900/20 text-sky-400 border border-sky-800/30'},
     {id:'calculator', icon:'🧮', name:'Bet Calculator', desc:'Perfect stakes, any bankroll', badge:null},
   ]
-  const handleSignup = async () => {
-    if (!signupEmail) return
-    try {
-      await fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: signupEmail })
-      })
-      setLoginOpen(false)
-      setSignupEmail('')
-      alert('Welcome to FluxOdds! Check your email.')
-    } catch (e) {
-      alert('Something went wrong, try again.')
-    }
-  }
+ 
   const net = ((bankroll * (selectedArb?.profit || 0)) / 100).toFixed(2)
   const payout = (parseFloat(bankroll) + parseFloat(net)).toFixed(2)
   const stakeA = selectedArb ? ((bankroll * selectedArb.sA) / 100).toFixed(2) : 0
@@ -115,7 +145,6 @@ export default function Home() {
  
   if (view === 'dashboard') return (
     <div className="flex flex-col h-screen bg-[#07090c] text-[#eef1f5] font-sans overflow-hidden">
-      {/* Dash topbar */}
       <div className="h-[54px] flex-shrink-0 flex items-center justify-between px-5 bg-[#0e1318] border-b border-[#1a222c]">
         <div className="flex items-center gap-3">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="flex flex-col gap-[5px] justify-center w-8 h-8 bg-none border-none cursor-pointer p-1 rounded-md hover:bg-[#141b23]">
@@ -140,12 +169,12 @@ export default function Home() {
           </div>
           <div className="w-px h-7 bg-[#222d3a]"></div>
           <button onClick={() => setView('marketing')} className="flex items-center gap-1 border border-[#222d3a] text-[#4e6070] px-3 py-[5px] rounded-md text-xs font-semibold hover:text-[#eef1f5] hover:border-[#2a3a4a] transition-all">← Back to site</button>
-          <div className="w-7 h-7 rounded-full bg-[#00c2ff] flex items-center justify-center text-[10px] font-black text-black">JD</div>
+          <button onClick={handleSignout} className="flex items-center gap-1 border border-[#222d3a] text-[#4e6070] px-3 py-[5px] rounded-md text-xs font-semibold hover:text-red-400 hover:border-red-800 transition-all">Sign out</button>
+          <div className="w-7 h-7 rounded-full bg-[#00c2ff] flex items-center justify-center text-[10px] font-black text-black">{user?.email?.[0]?.toUpperCase() || 'U'}</div>
         </div>
       </div>
  
       <div className="flex flex-1 overflow-hidden">
-        {/* Dash sidebar */}
         {sidebarOpen && (
           <div className="w-[248px] min-w-[248px] bg-[#0e1318] border-r border-[#1a222c] flex flex-col overflow-y-auto flex-shrink-0">
             <div className="px-3 pt-5 pb-2">
@@ -186,7 +215,6 @@ export default function Home() {
           </div>
         )}
  
-        {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {dashView === 'home' ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center px-6 relative overflow-hidden">
@@ -224,7 +252,6 @@ export default function Home() {
             </div>
           ) : (
             <div className="flex flex-col flex-1 overflow-hidden">
-              {/* Tool bar */}
               <div className="px-5 pt-3 pb-3 bg-[#0e1318] border-b border-[#1a222c] flex-shrink-0">
                 <div className="flex items-center justify-between mb-3">
                   <div className="font-['Bebas_Neue'] text-2xl tracking-wide">{toolName}</div>
@@ -255,7 +282,6 @@ export default function Home() {
                 </div>
               </div>
  
-              {/* Table */}
               <div className="flex-1 overflow-y-auto">
                 <div className="grid text-[10px] font-bold tracking-[.1em] uppercase text-[#4e6070] px-5 py-[6px] border-b border-[#222d3a] bg-[#0e1318] sticky top-0 z-10" style={{gridTemplateColumns:'2fr 1fr 1fr 80px 90px'}}>
                   <span>Game</span><span>Book A</span><span>Book B</span><span>Profit</span><span>Stakes ($100)</span>
@@ -268,7 +294,7 @@ export default function Home() {
                 ) : filtered.map((a, i) => (
                   <div key={i} onClick={() => setSelectedArb(a)}
                     className="grid px-5 py-[11px] border-b border-[#1a222c] items-center cursor-pointer hover:bg-[#0e1318] transition-colors"
-                    style={{gridTemplateColumns:'2fr 1fr 1fr 80px 90px', animationDelay:`${i*0.025}s`}}>
+                    style={{gridTemplateColumns:'2fr 1fr 1fr 80px 90px'}}>
                     <div>
                       <div className="text-[13px] font-bold mb-[3px]">{a.game}</div>
                       <div className="flex items-center gap-[5px]">
@@ -284,7 +310,6 @@ export default function Home() {
                 ))}
               </div>
  
-              {/* Status bar */}
               <div className="h-[25px] flex-shrink-0 flex items-center gap-4 px-5 bg-[#0e1318] border-t border-[#1a222c] text-[10px] font-mono text-[#4e6070]">
                 <span><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected · 40 books</span>
                 <span className="text-[#1a222c]">|</span>
@@ -296,7 +321,6 @@ export default function Home() {
         </div>
       </div>
  
-      {/* Detail panel */}
       {selectedArb && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSelectedArb(null)}></div>
@@ -349,7 +373,6 @@ export default function Home() {
  
   return (
     <div className="bg-[#07090c] text-[#eef1f5] font-sans overflow-x-hidden">
-      {/* Sidebar overlay */}
       {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-[90] backdrop-blur-sm" onClick={() => setSidebarOpen(false)}></div>}
       <div className={`fixed top-0 left-0 bottom-0 w-[256px] bg-[#0e1318] border-r border-[#222d3a] z-[91] flex flex-col overflow-y-auto transition-transform duration-300 ${sidebarOpen?'translate-x-0':'-translate-x-full'}`}>
         <div className="h-[60px] flex items-center justify-between px-4 border-b border-[#1a222c]">
@@ -391,7 +414,6 @@ export default function Home() {
         </div>
       </div>
  
-      {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-12 h-[60px] bg-[#07090c]/93 border-b border-[#1a222c] backdrop-blur-md">
         <div className="flex items-center gap-3">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="flex flex-col gap-[5px] justify-center w-8 h-8 bg-transparent border-none cursor-pointer p-1 rounded-md hover:bg-[#141b23]">
@@ -409,12 +431,20 @@ export default function Home() {
           ))}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setLoginOpen(true)} className="px-4 py-[7px] rounded-lg border border-[#222d3a] text-[#4e6070] text-[13px] font-semibold hover:border-[#00c2ff] hover:text-[#00c2ff] transition-all">Log in</button>
-          <button onClick={() => { setView('dashboard'); setDashView('home') }} className="px-5 py-[8px] rounded-lg bg-[#00c2ff] text-black text-[13px] font-bold hover:bg-[#22cfff] transition-all">Launch App →</button>
+          {user ? (
+            <>
+              <button onClick={launchDash} className="px-5 py-[8px] rounded-lg bg-[#00c2ff] text-black text-[13px] font-bold hover:bg-[#22cfff] transition-all">Dashboard →</button>
+              <button onClick={handleSignout} className="px-4 py-[7px] rounded-lg border border-[#222d3a] text-[#4e6070] text-[13px] font-semibold hover:border-red-800 hover:text-red-400 transition-all">Sign out</button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => { setLoginTab('login'); setLoginOpen(true) }} className="px-4 py-[7px] rounded-lg border border-[#222d3a] text-[#4e6070] text-[13px] font-semibold hover:border-[#00c2ff] hover:text-[#00c2ff] transition-all">Log in</button>
+              <button onClick={launchDash} className="px-5 py-[8px] rounded-lg bg-[#00c2ff] text-black text-[13px] font-bold hover:bg-[#22cfff] transition-all">Launch App →</button>
+            </>
+          )}
         </div>
       </nav>
  
-      {/* Hero */}
       <section id="home" className="min-h-screen flex flex-col items-center justify-center text-center px-12 pt-[110px] pb-20 relative overflow-hidden">
         <div className="absolute inset-0 opacity-100" style={{backgroundImage:'linear-gradient(rgba(0,194,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(0,194,255,.035) 1px,transparent 1px)',backgroundSize:'58px 58px',maskImage:'radial-gradient(ellipse 80% 70% at 50% 50%,black 20%,transparent 100%)'}}></div>
         <div className="absolute w-[640px] h-[280px] top-[32%] left-1/2 -translate-x-1/2 pointer-events-none" style={{background:'radial-gradient(ellipse,rgba(0,194,255,.1) 0%,transparent 70%)'}}></div>
@@ -430,7 +460,7 @@ export default function Home() {
             FluxOdds scans every major sportsbook in real time and surfaces arbitrage opportunities before they disappear. Guaranteed profit. Zero guesswork.
           </p>
           <div className="flex items-center gap-3 justify-center">
-            <button onClick={() => { setView('dashboard'); setDashView('home') }} className="px-9 py-4 rounded-xl bg-[#00c2ff] text-black text-[15px] font-black hover:bg-[#22cfff] transition-all hover:-translate-y-[2px]">Launch FluxOdds →</button>
+            <button onClick={launchDash} className="px-9 py-4 rounded-xl bg-[#00c2ff] text-black text-[15px] font-black hover:bg-[#22cfff] transition-all hover:-translate-y-[2px]">Launch FluxOdds →</button>
             <a href="#how" className="px-9 py-4 rounded-xl border border-[#222d3a] text-[#eef1f5] text-[15px] font-bold hover:border-[#00c2ff] hover:text-[#00c2ff] transition-all no-underline">How it works</a>
           </div>
           <div className="flex items-center gap-11 mt-16 justify-center">
@@ -444,7 +474,6 @@ export default function Home() {
         </div>
       </section>
  
-      {/* Ticker */}
       <div className="border-t border-b border-[#1a222c] bg-[#0e1318] py-[9px] overflow-hidden">
         <div className="flex gap-11 whitespace-nowrap" style={{animation:'ticker 28s linear infinite',width:'max-content'}}>
           {[...TICKS,...TICKS].map((t,i) => (
@@ -459,7 +488,6 @@ export default function Home() {
         </div>
       </div>
  
-      {/* How it works */}
       <section id="how" className="py-[90px] px-12 bg-[#0e1318] border-t border-b border-[#1a222c]">
         <div className="text-[11px] font-bold tracking-[.15em] uppercase text-[#00c2ff] mb-3">How it works</div>
         <h2 className="font-['Bebas_Neue'] leading-none tracking-wide mb-4" style={{fontSize:'clamp(38px,5vw,68px)'}}>THREE STEPS.<br/>PURE PROFIT.</h2>
@@ -479,7 +507,6 @@ export default function Home() {
         </div>
       </section>
  
-      {/* Features */}
       <section id="features" className="py-[90px] px-12 bg-[#07090c]">
         <div className="text-[11px] font-bold tracking-[.15em] uppercase text-[#00c2ff] mb-3">Features</div>
         <h2 className="font-['Bebas_Neue'] leading-none tracking-wide mb-4" style={{fontSize:'clamp(38px,5vw,68px)'}}>EVERYTHING YOU<br/>NEED TO WIN.</h2>
@@ -502,7 +529,6 @@ export default function Home() {
         </div>
       </section>
  
-      {/* Live preview */}
       <section id="preview" className="py-[90px] px-12 bg-[#0e1318] border-t border-b border-[#1a222c]">
         <div className="text-[11px] font-bold tracking-[.15em] uppercase text-[#00c2ff] mb-3">Live preview</div>
         <h2 className="font-['Bebas_Neue'] leading-none tracking-wide mb-4" style={{fontSize:'clamp(38px,5vw,68px)'}}>THIS IS WHAT<br/>PROFIT LOOKS LIKE.</h2>
@@ -531,7 +557,6 @@ export default function Home() {
         </div>
       </section>
  
-      {/* Pricing */}
       <section id="pricing" className="py-[90px] px-12 bg-[#07090c]">
         <div className="text-[11px] font-bold tracking-[.15em] uppercase text-[#00c2ff] mb-3">Pricing</div>
         <h2 className="font-['Bebas_Neue'] leading-none tracking-wide mb-4" style={{fontSize:'clamp(38px,5vw,68px)'}}>PAY FOR WHAT<br/>YOU WIN WITH.</h2>
@@ -551,7 +576,7 @@ export default function Home() {
               <div className="text-[13px] font-bold text-[#4e6070] tracking-[.08em] uppercase mb-3">{p.name}</div>
               <div className="font-['Bebas_Neue'] text-[58px] leading-none tracking-wide mb-1"><sup className="text-[24px]">$</sup>{p.price}<span className="text-[16px] text-[#4e6070] font-sans font-medium">/mo</span></div>
               <p className="text-[#4e6070] text-[13px] mb-7 leading-relaxed">{p.desc}</p>
-              <button onClick={() => setLoginOpen(true)} className={`block w-full py-3 rounded-xl text-[13px] font-black mb-7 transition-all ${p.btnStyle}`}>{p.btn}</button>
+              <button onClick={() => { setLoginTab('signup'); setLoginOpen(true) }} className={`block w-full py-3 rounded-xl text-[13px] font-black mb-7 transition-all ${p.btnStyle}`}>{p.btn}</button>
               <ul className="flex flex-col gap-[10px]">
                 {p.feats.map((f,j) => <li key={j} className="flex items-center gap-2 text-[13px] text-[#4e6070]"><span className="w-[15px] h-[15px] rounded-full bg-emerald-900/15 border border-emerald-800/25 flex items-center justify-center text-emerald-400 text-[9px] flex-shrink-0">✓</span>{f}</li>)}
                 {p.off.map((f,j) => <li key={j} className="flex items-center gap-2 text-[13px] text-[#2e3d4a]"><span className="w-[15px] h-[15px] rounded-full bg-[#141b23] border border-[#222d3a] flex items-center justify-center text-[#2e3d4a] text-[9px] flex-shrink-0">✕</span>{f}</li>)}
@@ -561,7 +586,6 @@ export default function Home() {
         </div>
       </section>
  
-      {/* FAQ */}
       <section id="faq" className="py-[90px] px-12 bg-[#0e1318] border-t border-b border-[#1a222c]">
         <div className="max-w-[720px] mx-auto">
           <div className="text-[11px] font-bold tracking-[.15em] uppercase text-[#00c2ff] mb-3">FAQ</div>
@@ -581,7 +605,6 @@ export default function Home() {
         </div>
       </section>
  
-      {/* CTA */}
       <div className="py-[90px] px-12 text-center bg-[#07090c] border-t border-[#1a222c] relative overflow-hidden">
         <div className="absolute inset-0" style={{background:'radial-gradient(ellipse 55% 80% at 50% 50%,rgba(0,194,255,.05) 0%,transparent 70%)'}}></div>
         <div className="relative z-10">
@@ -589,13 +612,12 @@ export default function Home() {
           <h2 className="font-['Bebas_Neue'] leading-none tracking-wide mb-4" style={{fontSize:'clamp(44px,7vw,90px)'}}>STOP GAMBLING.<br/><span className="text-[#00c2ff]">START WINNING.</span></h2>
           <p className="text-[#4e6070] text-[17px] max-w-[480px] mx-auto mb-10 leading-relaxed">Join thousands of bettors already using FluxOdds to find guaranteed profit every single day.</p>
           <div className="flex items-center gap-3 justify-center">
-            <button onClick={() => { setView('dashboard'); setDashView('home') }} className="px-9 py-4 rounded-xl bg-[#00c2ff] text-black text-[15px] font-black hover:bg-[#22cfff] transition-all hover:-translate-y-[2px]">Launch FluxOdds →</button>
+            <button onClick={launchDash} className="px-9 py-4 rounded-xl bg-[#00c2ff] text-black text-[15px] font-black hover:bg-[#22cfff] transition-all hover:-translate-y-[2px]">Launch FluxOdds →</button>
             <a href="#pricing" className="px-9 py-4 rounded-xl border border-[#222d3a] text-[#eef1f5] text-[15px] font-bold hover:border-[#00c2ff] hover:text-[#00c2ff] transition-all no-underline">View pricing</a>
           </div>
         </div>
       </div>
  
-      {/* Contact */}
       <section id="contact" className="py-[90px] px-12 bg-[#07090c]">
         <div className="text-center mb-14">
           <div className="text-[11px] font-bold tracking-[.15em] uppercase text-[#00c2ff] mb-3">Contact</div>
@@ -626,7 +648,6 @@ export default function Home() {
         </div>
       </section>
  
-      {/* Footer */}
       <footer className="bg-[#0e1318] border-t border-[#1a222c] px-12 py-10 flex items-center justify-between flex-wrap gap-5">
         <div className="font-['Bebas_Neue'] text-[22px] tracking-widest">FLUX<span className="text-[#00c2ff]">ODDS</span></div>
         <div className="flex gap-6">
@@ -637,14 +658,13 @@ export default function Home() {
         <div className="text-[#2e3d4a] text-[13px]">© 2025 FluxOdds. All rights reserved.</div>
       </footer>
  
-      {/* Login modal */}
       {loginOpen && (
         <>
-          <div className="fixed inset-0 bg-black/82 z-[200] backdrop-blur-sm" onClick={() => setLoginOpen(false)}></div>
+          <div className="fixed inset-0 bg-black/80 z-[200] backdrop-blur-sm" onClick={() => setLoginOpen(false)}></div>
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[201] w-[400px] max-w-[90vw] bg-[#0e1318] border border-[#222d3a] rounded-xl p-11">
             <button onClick={() => setLoginOpen(false)} className="absolute top-4 right-4 text-[#4e6070] text-[18px] hover:text-[#eef1f5] bg-none border-none cursor-pointer">×</button>
-            <div className="font-['Bebas_Neue'] text-[32px] tracking-wide mb-1">GET STARTED.</div>
-            <p className="text-[#4e6070] text-[13px] mb-6">Enter your email to create your account and start finding arbs.</p>
+            <div className="font-['Bebas_Neue'] text-[32px] tracking-wide mb-1">{loginTab === 'login' ? 'WELCOME BACK.' : 'GET STARTED.'}</div>
+            <p className="text-[#4e6070] text-[13px] mb-6">{loginTab === 'login' ? 'Log in to access your FluxOdds dashboard.' : 'Create your account to start finding arbs.'}</p>
             <div className="flex border border-[#222d3a] rounded-lg overflow-hidden mb-6">
               {['login','signup'].map(t => (
                 <button key={t} onClick={() => setLoginTab(t)}
@@ -655,14 +675,17 @@ export default function Home() {
             </div>
             <div className="mb-4">
               <label className="block text-[11px] font-bold tracking-[.08em] uppercase text-[#4e6070] mb-2">Email</label>
-              <input type="email" placeholder="you@example.com" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} className="w-full bg-[#07090c] border border-[#222d3a] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#00c2ff] transition-colors" />
+              <input type="email" placeholder="you@example.com" value={signupEmail} onChange={e => setSignupEmail(e.target.value)}
+                className="w-full bg-[#07090c] border border-[#222d3a] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#00c2ff] transition-colors" />
             </div>
             <div className="mb-4">
               <label className="block text-[11px] font-bold tracking-[.08em] uppercase text-[#4e6070] mb-2">Password</label>
-              <input type="password" placeholder="••••••••" className="w-full bg-[#07090c] border border-[#222d3a] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#00c2ff] transition-colors" />
+              <input type="password" placeholder="••••••••" value={signupPassword} onChange={e => setSignupPassword(e.target.value)}
+                className="w-full bg-[#07090c] border border-[#222d3a] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#00c2ff] transition-colors" />
             </div>
-            <button onClick={handleSignup} className="w-full mt-1 py-[14px] rounded-xl bg-[#00c2ff] text-black text-[14px] font-black hover:bg-[#22cfff] transition-all">Continue →</button>
-
+            <button onClick={handleSignup} className="w-full mt-1 py-[14px] rounded-xl bg-[#00c2ff] text-black text-[14px] font-black hover:bg-[#22cfff] transition-all">
+              {loginTab === 'login' ? 'Log in →' : 'Create account →'}
+            </button>
           </div>
         </>
       )}
