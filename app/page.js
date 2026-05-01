@@ -48,14 +48,33 @@ export default function Home() {
   const [contactSent, setContactSent] = useState(false)
   const [signupEmail, setSignupEmail] = useState('')
   const [signupPassword, setSignupPassword] = useState('')
+  const [userPlan, setUserPlan] = useState('free')
   const [user, setUser] = useState(null)
  
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setUser(session.user)
+ useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        setUser(session.user)
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('plan')
+          .eq('user_id', session.user.id)
+          .single()
+        if (profile) setUserPlan(profile.plan)
+      }
     })
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user || null)
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('plan')
+          .eq('user_id', session.user.id)
+          .single()
+        if (profile) setUserPlan(profile.plan)
+      } else {
+        setUserPlan('free')
+      }
     })
   }, [])
  
@@ -326,8 +345,8 @@ const handleForgotPassword = async () => {
                     <div className="text-[15px] font-bold text-[#eef1f5]">No arbs match your filters</div>
                   </div>
                 ) : filtered.map((a, i) => (
-                  <div key={i} onClick={() => setSelectedArb(a)}
-                    className="grid px-5 py-[12px] border-b border-[#1e1c16] items-center cursor-pointer hover:bg-[#0f0e0b] transition-colors"
+                  <div key={i} onClick={() => userPlan !== 'free' || a.profit <= 2 ? setSelectedArb(a) : null}
+                    className={`grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors ${userPlan === 'free' && a.profit > 2 ? 'relative cursor-default select-none' : 'cursor-pointer hover:bg-[#0f0e0b]'}`}
                     style={{gridTemplateColumns:'2fr 1fr 1fr 90px 100px'}}>
                     <div>
                       <div className="text-[13px] font-semibold mb-[4px]">{a.game}</div>
@@ -346,6 +365,7 @@ const handleForgotPassword = async () => {
                     </div>
                     <div className="text-[18px] font-black text-[#ff6b1a]">+{a.profit}%</div>
                     <div className="text-[12px] text-[#7a8a96] font-medium">${a.sA} / ${a.sB}</div>
+                    {userPlan === 'free' && a.profit > 2 && <div className="absolute inset-0 backdrop-blur-sm bg-[#080806]/60 flex items-center justify-center"><span className="text-[12px] font-bold text-[#ff6b1a] bg-[#0f0e0b] border border-[#ff6b1a]/30 px-3 py-1 rounded-full">🔒 Pro only</span></div>}
                   </div>
                 ))}
               </div>
