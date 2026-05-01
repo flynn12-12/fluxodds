@@ -42,6 +42,8 @@ export default function Home() {
   const [toolName, setToolName] = useState('Prematch Arbitrage')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loginOpen, setLoginOpen] = useState(false)
+  const [signupOpen, setSignupOpen] = useState(false)
+  const [signupDone, setSignupDone] = useState(false)
   const [loginTab, setLoginTab] = useState('login')
   const [selectedArb, setSelectedArb] = useState(null)
   const [bankroll, setBankroll] = useState(100)
@@ -51,7 +53,8 @@ export default function Home() {
   const [faqOpen, setFaqOpen] = useState(null)
   const [secs, setSecs] = useState(0)
   const [contactSent, setContactSent] = useState(false)
- 
+  const [signupEmail, setSignupEmail] = useState('')
+
   useEffect(() => {
     const t = setInterval(() => setSecs(s => s + 1), 1000)
     return () => clearInterval(t)
@@ -90,7 +93,21 @@ export default function Home() {
     {id:'freebets', icon:'🎁', name:'Free Bet Converter', desc:'Turn promos into real cash', badge:'PRO', badgeStyle:'bg-sky-900/20 text-sky-400 border border-sky-800/30'},
     {id:'calculator', icon:'🧮', name:'Bet Calculator', desc:'Perfect stakes, any bankroll', badge:null},
   ]
- 
+  const handleSignup = async () => {
+    if (!signupEmail) return
+    try {
+      await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: signupEmail })
+      })
+      setLoginOpen(false)
+      setSignupEmail('')
+      alert('Welcome to FluxOdds! Check your email.')
+    } catch (e) {
+      alert('Something went wrong, try again.')
+    }
+  }
   const net = ((bankroll * (selectedArb?.profit || 0)) / 100).toFixed(2)
   const payout = (parseFloat(bankroll) + parseFloat(net)).toFixed(2)
   const stakeA = selectedArb ? ((bankroll * selectedArb.sA) / 100).toFixed(2) : 0
@@ -626,8 +643,8 @@ export default function Home() {
           <div className="fixed inset-0 bg-black/82 z-[200] backdrop-blur-sm" onClick={() => setLoginOpen(false)}></div>
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[201] w-[400px] max-w-[90vw] bg-[#0e1318] border border-[#222d3a] rounded-xl p-11">
             <button onClick={() => setLoginOpen(false)} className="absolute top-4 right-4 text-[#4e6070] text-[18px] hover:text-[#eef1f5] bg-none border-none cursor-pointer">×</button>
-            <div className="font-['Bebas_Neue'] text-[32px] tracking-wide mb-1">WELCOME BACK.</div>
-            <p className="text-[#4e6070] text-[13px] mb-6">Log in or create your account to start finding arbs.</p>
+            <div className="font-['Bebas_Neue'] text-[32px] tracking-wide mb-1">GET STARTED.</div>
+            <p className="text-[#4e6070] text-[13px] mb-6">Enter your email to create your account and start finding arbs.</p>
             <div className="flex border border-[#222d3a] rounded-lg overflow-hidden mb-6">
               {['login','signup'].map(t => (
                 <button key={t} onClick={() => setLoginTab(t)}
@@ -636,13 +653,16 @@ export default function Home() {
                 </button>
               ))}
             </div>
-            {[{l:'Email',t:'email',p:'you@example.com'},{l:'Password',t:'password',p:'••••••••'}].map(f => (
-              <div key={f.l} className="mb-4">
-                <label className="block text-[11px] font-bold tracking-[.08em] uppercase text-[#4e6070] mb-2">{f.l}</label>
-                <input type={f.t} placeholder={f.p} className="w-full bg-[#07090c] border border-[#222d3a] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#00c2ff] transition-colors" />
-              </div>
-            ))}
-            <button className="w-full mt-1 py-[14px] rounded-xl bg-[#00c2ff] text-black text-[14px] font-black hover:bg-[#22cfff] transition-all">Continue →</button>
+            <div className="mb-4">
+              <label className="block text-[11px] font-bold tracking-[.08em] uppercase text-[#4e6070] mb-2">Email</label>
+              <input type="email" placeholder="you@example.com" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} className="w-full bg-[#07090c] border border-[#222d3a] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#00c2ff] transition-colors" />
+            </div>
+            <div className="mb-4">
+              <label className="block text-[11px] font-bold tracking-[.08em] uppercase text-[#4e6070] mb-2">Password</label>
+              <input type="password" placeholder="••••••••" className="w-full bg-[#07090c] border border-[#222d3a] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#00c2ff] transition-colors" />
+            </div>
+            <button onClick={handleSignup} className="w-full mt-1 py-[14px] rounded-xl bg-[#00c2ff] text-black text-[14px] font-black hover:bg-[#22cfff] transition-all">Continue →</button>
+
           </div>
         </>
       )}
