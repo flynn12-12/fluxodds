@@ -81,16 +81,12 @@ function findArbs(events) {
 export const maxDuration = 30
 
 export async function GET() {
+  const url = `https://api.sportsgameodds.com/v2/events?apiKey=${API_KEY}&leagueID=MLB,NHL&oddsAvailable=true&limit=5`
   try {
-    const res = await fetch(
-      `https://api.sportsgameodds.com/v2/events?apiKey=${API_KEY}&leagueID=MLB,NBA&oddsAvailable=true&limit=10`,
-      { cache: 'no-store' }
-    )
-    const data = await res.json()
-    const events = data.data || []
-    const arbs = findArbs(events)
-    return Response.json({ arbs, total: arbs.length, eventCount: events.length })
+    const res = await fetch(url, { cache: 'no-store' })
+    const text = await res.text()
+    return new Response(text, { headers: { 'content-type': 'application/json' } })
   } catch (e) {
-    return Response.json({ arbs: [], error: e.message })
+    return Response.json({ error: e.message, url })
   }
 }
