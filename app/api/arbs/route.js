@@ -14,24 +14,34 @@ function findArbs(events) {
     const gameName = `${event.teams?.away?.names?.medium || 'Away'} vs ${event.teams?.home?.names?.medium || 'Home'}`
     const sport = (event.sportID || 'unknown').toLowerCase()
     const time = event.startsAt || ''
+    const odds = event.odds
 
-    const oddsObj = event.odds || {}
+    if (!odds || typeof odds !== 'object') continue
 
-    // Group by market then by outcome
+    // Group odds by market (statID-statEntityID-periodID-betTypeID), then by side
     const markets = {}
-    for (const [bookmaker, marketData] of Object.entries(oddsObj)) {
-      if (typeof marketData !== 'object') continue
-      for (const [marketKey, outcomes] of Object.entries(marketData)) {
-        if (typeof outcomes !== 'object') continue
-        if (!markets[marketKey]) markets[marketKey] = {}
-        for (const [side, price] of Object.entries(outcomes)) {
-          if (!markets[marketKey][side]) markets[marketKey][side] = []
-          markets[marketKey][side].push({ bookmaker, price })
+
+    for (const [oddID, oddData] of Object.entries(odds)) {
+      if (!oddData?.byBookmaker) continue
+
+      // oddID format: statID-statEntityID-periodID-betTypeID-sideID
+      const parts = oddID.split('-')
+      if (parts.length < 5) continue
+      const sideID = parts[parts.length - 1]
+      const marketKey = parts.slice(0, -1).join('-')
+
+      if (!markets[marketKey]) markets[marketKey] = {}
+      if (!markets[marketKey][sideID]) markets[marketKey][sideID] = []
+
+      for (const [bookmaker, bookData] of Object.entries(oddData.byBookmaker)) {
+        const price = bookData?.odds?.american
+        if (price != null) {
+          markets[marketKey][sideID].push({ bookmaker, price })
         }
       }
     }
 
-    // Find arbs across books
+    // Find arbs across sides
     for (const [market, sides] of Object.entries(markets)) {
       const sideKeys = Object.keys(sides)
       if (sideKeys.length < 2) continue
@@ -73,13 +83,13 @@ function findArbs(events) {
 export async function GET() {
   try {
     const res = await fetch(
-      `https://api.sportsgameodds.com/v2/events?apiKey=${API_KEY}&oddsAvailable=true&limit=100&includeOdds=true`,
+      `https://api.sportsgameodds.com/v2/events?apiKey=${API_KEY}&leagueID=NBA,NFL,MLB,NHL,SOCCER&oddsAvailable=true&limit=50`,
       { next: { revalidate: 30 } }
     )
     const data = await res.json()
     const events = data.data || []
     const arbs = findArbs(events)
-    return Response.json({ arbs, total: arbs.length })
+    return Response.json({ arbs, total: arbs.length, eventCount: events.length })
   } catch (e) {
     return Response.json({ arbs: [], error: e.message })
   }
