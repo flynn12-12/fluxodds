@@ -89,6 +89,7 @@ export default function Home() {
       try {
         const res = await fetch('/api/arbs')
         const data = await res.json()
+        console.log('arbs fetched:', data.total, data.arbs?.length)
         if (data.arbs && data.arbs.length > 0) setLiveData(data.arbs)
       } catch (e) {
         console.error('Failed to fetch arbs:', e)
