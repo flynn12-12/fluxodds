@@ -120,6 +120,22 @@ const handleForgotPassword = async () => {
       alert(e.message)
     }
   }
+  const handleCheckout = async () => {
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceId: 'price_1TSNXCHCUgRq1HVGov0nnMQc',
+          email: user?.email || '',
+        })
+      })
+      const { url } = await res.json()
+      if (url) window.location.href = url
+    } catch (e) {
+      alert('Something went wrong. Please try again.')
+    }
+  }
   const handleSignout = async () => {
     await supabase.auth.signOut()
     setUser(null)
@@ -626,7 +642,7 @@ const handleForgotPassword = async () => {
               <div className="text-[13px] font-semibold text-[#5a6a78] tracking-wider uppercase mb-3">{p.name}</div>
               <div className="text-[58px] font-black leading-none mb-1"><sup className="text-[24px]">$</sup>{p.price}<span className="text-[16px] text-[#5a6a78] font-medium">/mo</span></div>
               <p className="text-[#5a6a78] text-[13px] mb-7 leading-relaxed font-medium">{p.desc}</p>
-              <button onClick={() => { setLoginTab('signup'); setLoginOpen(true) }} className={`block w-full py-3 rounded-xl text-[13px] font-black mb-7 transition-all cursor-pointer border-none ${p.btnStyle}`}>{p.btn}</button>
+              <button onClick={() => { p.featured ? (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true))) : (setLoginTab('signup'), setLoginOpen(true)) }} className={`block w-full py-3 rounded-xl text-[13px] font-black mb-7 transition-all cursor-pointer border-none ${p.btnStyle}`}>{p.btn}</button>
               <ul className="flex flex-col gap-[10px]" style={{listStyle:'none'}}>
                 {p.feats.map((f,j) => <li key={j} className="flex items-center gap-2 text-[13px] text-[#5a6a78] font-medium"><span className="w-[15px] h-[15px] rounded-full bg-emerald-900/15 border border-emerald-800/25 flex items-center justify-center text-emerald-400 text-[9px] flex-shrink-0">✓</span>{f}</li>)}
                 {p.off.map((f,j) => <li key={j} className="flex items-center gap-2 text-[13px] text-[#2a2820] font-medium"><span className="w-[15px] h-[15px] rounded-full bg-[#1a1812] border border-[#1e1c16] flex items-center justify-center text-[#2a2820] text-[9px] flex-shrink-0">✕</span>{f}</li>)}
