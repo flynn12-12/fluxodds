@@ -22,18 +22,14 @@ export async function POST(request) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object
-    const email = session.customer_email
-    console.log('Payment completed for:', email)
+    const userId = session.metadata?.user_id
 
-    const { data: users } = await supabase.auth.admin.listUsers()
-    const user = users?.users?.find(u => u.email === email)
-
-    if (user) {
+    if (userId) {
       await supabase
         .from('profiles')
-        .update({ plan: 'pro', email: email })
-        .eq('id', user.id)
-      console.log('Updated user to pro:', user.id)
+        .update({ plan: 'pro' })
+        .eq('user_id', userId)
+      console.log('Updated user to pro:', userId)
     }
   }
 
@@ -49,7 +45,7 @@ export async function POST(request) {
       await supabase
         .from('profiles')
         .update({ plan: 'free' })
-        .eq('id', user.id)
+        .eq('user_id', user.id)
       console.log('Downgraded user to free:', user.id)
     }
   }

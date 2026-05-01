@@ -148,6 +148,7 @@ export default function Home() {
         body: JSON.stringify({
           priceId: 'price_1TSNXCHCUgRq1HVGov0nnMQc',
           email: user?.email || '',
+          userId: user?.id || '',
         })
       })
       const { url } = await res.json()
