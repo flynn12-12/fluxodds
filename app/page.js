@@ -28,7 +28,6 @@ const TICKS = [
   {game:'Chiefs vs Ravens',sport:'NFL',profit:'+2.1%',books:'PointsBet / BetRivers'},
 ]
  
-// Single neutral style for all sport tags
 const SPORT_TAG = 'bg-[#1e1c16] text-[#7a8a96] border border-[#2a2820] text-[9px] font-semibold px-[6px] py-[1px] rounded'
  
 export default function Home() {
@@ -51,7 +50,7 @@ export default function Home() {
   const [userPlan, setUserPlan] = useState('free')
   const [user, setUser] = useState(null)
  
- useEffect(() => {
+  useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
         setUser(session.user)
@@ -61,9 +60,6 @@ export default function Home() {
           .eq('user_id', session.user.id)
           .single()
         if (profile) setUserPlan(profile.plan)
-          if (profile) setUserPlan(profile.plan)
-console.log('profile:', profile)
-console.log('userPlan:', profile?.plan)
       }
     })
     supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -72,9 +68,6 @@ console.log('userPlan:', profile?.plan)
         const { data: profile } = await supabase
           .from('profiles')
           .select('plan')
-          if (profile) setUserPlan(profile.plan)
-console.log('profile:', profile)
-console.log('userPlan:', profile?.plan)
           .eq('user_id', session.user.id)
           .single()
         if (profile) setUserPlan(profile.plan)
@@ -132,7 +125,8 @@ console.log('userPlan:', profile?.plan)
       alert(e.message)
     }
   }
-const handleForgotPassword = async () => {
+ 
+  const handleForgotPassword = async () => {
     if (!signupEmail) { alert('Enter your email first then click Forgot password'); return }
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(signupEmail, {
@@ -145,6 +139,7 @@ const handleForgotPassword = async () => {
       alert(e.message)
     }
   }
+ 
   const handleCheckout = async () => {
     try {
       const res = await fetch('/api/checkout', {
@@ -161,9 +156,11 @@ const handleForgotPassword = async () => {
       alert('Something went wrong. Please try again.')
     }
   }
+ 
   const handleSignout = async () => {
     await supabase.auth.signOut()
     setUser(null)
+    setUserPlan('free')
     setView('marketing')
   }
  
@@ -443,7 +440,6 @@ const handleForgotPassword = async () => {
   // ─── MARKETING SITE ──────────────────────────────────────────────────────────
   return (
     <div style={{fontFamily:"'Inter',sans-serif"}} className="bg-[#080806] text-[#eef1f5] overflow-x-hidden">
-      {/* Sidebar overlay */}
       {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-[90] backdrop-blur-sm" onClick={() => setSidebarOpen(false)}></div>}
       <div className={`fixed top-0 left-0 bottom-0 w-[256px] bg-[#0f0e0b] border-r border-[#1e1c16] z-[91] flex flex-col overflow-y-auto transition-transform duration-300 ${sidebarOpen?'translate-x-0':'-translate-x-full'}`}>
         <div className="h-[60px] flex items-center justify-between px-4 border-b border-[#1e1c16]">
@@ -655,13 +651,13 @@ const handleForgotPassword = async () => {
         <p className="text-[#5a6a78] text-[17px] max-w-[500px] leading-relaxed font-medium">Start free. Scale when you're profitable. No contracts, cancel anytime.</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-14">
           {[
-          {name:'Free',price:'0',desc:'Discover FluxOdds and start finding arbs at no cost.',btn:'Get started free',btnStyle:'border border-[#1e1c16] text-[#eef1f5] hover:border-[#ff6b1a] hover:text-[#ff6b1a]',featured:false,
+            {name:'Free',price:'0',desc:'Discover FluxOdds and start finding arbs at no cost.',btn:'Get started free',btnStyle:'border border-[#1e1c16] text-[#eef1f5] hover:border-[#ff6b1a] hover:text-[#ff6b1a]',featured:false,
               feats:['Unlimited arbs capped at 2%','All sports access','10 sportsbooks scanned','Basic bet calculator','Priority support','Early feature access'],
               off:['No instant alerts','No +EV bets','No P&L tracker']},
             {name:'Pro',price:'75',desc:'Full access for serious arbers ready to build real profit.',btn:'Try Pro Free For 3 Days',btnStyle:'bg-[#ff6b1a] text-black hover:bg-[#ff8c42]',featured:true,badge:'Most popular',
               feats:['Unlimited arbs','All sports covered','40+ sportsbooks','Instant alerts','Full +EV bet finder','Middles finder','Full P&L tracker','3 device limit','Cancel anytime'],off:[]},
             {name:'Pro Day Pass',price:'15',desc:'All Pro features for 24 hours. Perfect for occasional arbers.',btn:'Coming Soon',btnStyle:'border border-[#1e1c16] text-[#5a6a78]',featured:false,badge:'Coming soon',
-              feats:['All Pro features','24 hour access','One-time purchase','No subscription needed'],off:[]},  
+              feats:['All Pro features','24 hour access','One-time purchase','No subscription needed'],off:[]},
           ].map((p,i) => (
             <div key={i} className={`relative rounded-xl p-9 transition-all hover:-translate-y-[3px] ${p.featured?'border border-[#ff6b1a] bg-[#0f0e0b]':'border border-[#1e1c16] bg-[#0f0e0b] hover:border-[#2a2820]'}`}>
               {p.badge && <div className="absolute -top-[13px] left-1/2 -translate-x-1/2 bg-[#ff6b1a] text-black px-4 py-[3px] rounded-full text-[10px] font-black tracking-wider uppercase whitespace-nowrap">{p.badge}</div>}
@@ -784,7 +780,6 @@ const handleForgotPassword = async () => {
             </div>
             <button onClick={handleSignup} className="w-full mt-1 py-[14px] rounded-xl bg-[#ff6b1a] text-black text-[14px] font-black hover:bg-[#ff8c42] transition-all border-none cursor-pointer">
               {loginTab === 'login' ? 'Log in →' : 'Create account →'}
-              
             </button>
             {loginTab === 'login' && <div className="text-center mt-3"><button onClick={handleForgotPassword} className="text-[12px] text-[#5a6a78] hover:text-[#ff6b1a] transition-colors bg-transparent border-none cursor-pointer font-medium" style={{fontFamily:"'Inter',sans-serif"}}>Forgot password?</button></div>}
           </div>
