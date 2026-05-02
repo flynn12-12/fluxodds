@@ -72,25 +72,29 @@ export default function Home() {
     return () => clearInterval(t)
   }, [])
  
-  // Live arb fetching
-  useEffect(() => {
-    const fetchArbs = async () => {
-      try {
-        const res = await fetch('/api/arbs')
-        const data = await res.json()
-        if (data.arbs && data.arbs.length > 0) setLiveData(data.arbs)
-      } catch (e) {
-        console.error('Failed to fetch arbs:', e)
-      }
+ // Live arb fetching — polls every 1 second for real-time updates
+useEffect(() => {
+  let cancelled = false
+  const fetchArbs = async () => {
+    try {
+      const res = await fetch('/api/arbs', { cache: 'no-store' })
+      const data = await res.json()
+      if (!cancelled) setLiveData(data.arbs || [])
+    } catch (e) {
+      console.error('Failed to fetch arbs:', e)
     }
-    fetchArbs()
-    const interval = setInterval(fetchArbs, 5000)
-    return () => clearInterval(interval)
-  }, [])
+  }
+  fetchArbs()
+  const interval = setInterval(fetchArbs, 1000)
+  return () => {
+    cancelled = true
+    clearInterval(interval)
+  }
+}, [])
  
   const scanTime = secs < 60 ? `${secs}s ago` : `${Math.floor(secs/60)}m ago`
  
-  const displayData = liveData.length > 0 ? liveData : DATA
+ const displayData = liveData
  
   const filtered = displayData.filter(a => {
     if (sport !== 'all' && a.sport !== sport) return false
