@@ -1,9 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
- 
+
 const DATA = []
- 
+
 const TICKS = [
   {game:'PSG vs Bayern',sport:'Soccer',profit:'+5.1%',books:'Unibet / DraftKings'},
   {game:'Man City vs Arsenal',sport:'Soccer',profit:'+4.7%',books:'FanDuel / Unibet'},
@@ -12,18 +12,18 @@ const TICKS = [
   {game:'Warriors vs Nuggets',sport:'NBA',profit:'+2.9%',books:'Caesars / PointsBet'},
   {game:'Chiefs vs Ravens',sport:'NFL',profit:'+2.1%',books:'PointsBet / BetRivers'},
 ]
- 
+
 const SPORT_TAG = 'bg-[#1e1c16] text-[#7a8a96] border border-[#2a2820] text-[9px] font-semibold px-[6px] py-[1px] rounded'
 const MARKET_TAG = 'bg-orange-900/10 text-[#ff6b1a] border border-orange-800/20 text-[9px] font-semibold px-[6px] py-[1px] rounded'
- 
+
 // Strip trailing " on bookmakerName" from a bet label so we can show the bet
 // and the bookmaker separately in the UI.
 const cleanBet = (betStr, bookmaker) => {
   if (!betStr) return ''
   if (!bookmaker) return betStr
-  return betStr.replace(new RegExp(`\\s+on\\s+${bookmaker}$`, 'i')).trim()
+  return betStr.replace(new RegExp(`\\s+on\\s+${bookmaker}$`, 'i'), '').trim()
 }
- 
+
 // Pretty-print game start time
 const fmtTime = (iso) => {
   if (!iso) return ''
@@ -35,7 +35,7 @@ const fmtTime = (iso) => {
     })
   } catch { return iso }
 }
- 
+
 export default function Home() {
   const [view, setView] = useState('marketing')
   const [dashView, setDashView] = useState('home')
@@ -56,7 +56,7 @@ export default function Home() {
   const [userPlan, setUserPlan] = useState(null)
   const [user, setUser] = useState(null)
   const [liveData, setLiveData] = useState([])
- 
+
   // Auth + plan loading
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -86,13 +86,13 @@ export default function Home() {
       }
     })
   }, [])
- 
+
   // Timer (resets each scan, used for "last scan" display)
   useEffect(() => {
     const t = setInterval(() => setSecs(s => s + 1), 1000)
     return () => clearInterval(t)
   }, [])
- 
+
   // Live arb fetching — polls every 1 second for real-time updates
   useEffect(() => {
     let cancelled = false
@@ -115,11 +115,11 @@ export default function Home() {
       clearInterval(interval)
     }
   }, [])
- 
+
   const scanTime = secs < 60 ? `${secs}s ago` : `${Math.floor(secs/60)}m ago`
- 
+
   const displayData = liveData
- 
+
   const filtered = displayData.filter(a => {
     if (sport !== 'all' && a.sport !== sport) return false
     if (a.profit < minP) return false
@@ -128,10 +128,10 @@ export default function Home() {
       && !(a.bB || '').toLowerCase().includes(query)) return false
     return true
   })
- 
+
   // Only blur if we KNOW user is free (not null/loading)
   const shouldBlur = (a) => userPlan === 'free' && a.profit > 2
- 
+
   const openTool = (name) => {
     if (!user) { setLoginOpen(true); return }
     setToolName(name)
@@ -139,13 +139,13 @@ export default function Home() {
     setView('dashboard')
     setSidebarOpen(false)
   }
- 
+
   const launchDash = () => {
     if (!user) { setLoginOpen(true); return }
     setView('dashboard')
     setDashView('home')
   }
- 
+
   const handleSignup = async () => {
     if (!signupEmail || !signupPassword) { alert('Please enter email and password'); return }
     try {
@@ -166,7 +166,7 @@ export default function Home() {
       alert(e.message)
     }
   }
- 
+
   const handleForgotPassword = async () => {
     if (!signupEmail) { alert('Enter your email first then click Forgot password'); return }
     try {
@@ -180,7 +180,7 @@ export default function Home() {
       alert(e.message)
     }
   }
- 
+
   const handleCheckout = async () => {
     try {
       const res = await fetch('/api/checkout', {
@@ -198,14 +198,14 @@ export default function Home() {
       alert('Something went wrong. Please try again.')
     }
   }
- 
+
   const handleSignout = async () => {
     await supabase.auth.signOut()
     setUser(null)
     setUserPlan('free')
     setView('marketing')
   }
- 
+
   const faqs = [
     {q:'Is arbitrage betting legal?', a:"Yes — arbitrage betting is completely legal. You're simply placing bets at different sportsbooks to guarantee profit from odds discrepancies. FluxOdds is a data and analysis tool only."},
     {q:'How is profit actually guaranteed?', a:"When sportsbooks disagree on odds, the math can create a situation where betting on every outcome still results in profit. FluxOdds finds these windows and calculates exact stakes."},
@@ -214,7 +214,7 @@ export default function Home() {
     {q:'Which sportsbooks do you cover?', a:'40+ sportsbooks including DraftKings, FanDuel, BetMGM, Caesars, PointsBet, BetRivers, Unibet, and many more. We continuously add new books.'},
     {q:'Can I cancel anytime?', a:'Absolutely. No contracts. Cancel from your dashboard with one click. You keep access until the end of your billing period.'},
   ]
- 
+
   const tools = [
     {id:'live', icon:'⚡', name:'Live Arbitrage', desc:'Real-time arbs as they appear', badge:'LIVE'},
     {id:'prematch', icon:'🗓', name:'Prematch Arbitrage', desc:'Plan ahead, less time pressure'},
@@ -223,12 +223,12 @@ export default function Home() {
     {id:'freebets', icon:'🎁', name:'Free Bet Converter', desc:'Turn promos into real cash', badge:'PRO'},
     {id:'calculator', icon:'🧮', name:'Bet Calculator', desc:'Perfect stakes, any bankroll'},
   ]
- 
+
   const net = ((bankroll * (selectedArb?.profit || 0)) / 100).toFixed(2)
   const payout = (parseFloat(bankroll) + parseFloat(net)).toFixed(2)
   const stakeA = selectedArb ? ((bankroll * selectedArb.sA) / 100).toFixed(2) : 0
   const stakeB = selectedArb ? ((bankroll * selectedArb.sB) / 100).toFixed(2) : 0
- 
+
   // ─── DASHBOARD ───────────────────────────────────────────────────────────────
   if (view === 'dashboard') return (
     <div style={{fontFamily:"'Inter',sans-serif"}} className="flex flex-col h-screen bg-[#080806] text-[#eef1f5] overflow-hidden">
@@ -260,7 +260,7 @@ export default function Home() {
           <div className="w-7 h-7 rounded-full bg-[#ff6b1a] flex items-center justify-center text-[11px] font-black text-black cursor-pointer">{user?.email?.[0]?.toUpperCase()||'U'}</div>
         </div>
       </div>
- 
+
       <div className="flex flex-1 overflow-hidden">
         {sidebarOpen && (
           <div className="w-[240px] min-w-[240px] bg-[#0f0e0b] border-r border-[#1e1c16] flex flex-col overflow-y-auto flex-shrink-0">
@@ -303,7 +303,7 @@ export default function Home() {
             </div>
           </div>
         )}
- 
+
         <div className="flex-1 flex flex-col overflow-hidden">
           {dashView === 'home' ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center px-6 relative overflow-hidden">
@@ -374,7 +374,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
- 
+
               <div className="flex-1 overflow-y-auto">
                 <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 80px 100px'}}>
                   <span>Game</span><span>Bet A</span><span>Bet B</span><span>Profit</span><span>Stakes ($100)</span>
@@ -413,7 +413,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
- 
+
               <div className="h-[26px] flex-shrink-0 flex items-center gap-4 px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[11px] text-[#5a6a78] font-medium">
                 <span><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected · 40 books</span>
                 <span className="text-[#1e1c16]">|</span>
@@ -424,7 +424,7 @@ export default function Home() {
           )}
         </div>
       </div>
- 
+
       {selectedArb && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSelectedArb(null)}></div>
@@ -486,7 +486,7 @@ export default function Home() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');`}</style>
     </div>
   )
- 
+
   // ─── MARKETING SITE ──────────────────────────────────────────────────────────
   return (
     <div style={{fontFamily:"'Inter',sans-serif"}} className="bg-[#080806] text-[#eef1f5] overflow-x-hidden">
@@ -532,7 +532,7 @@ export default function Home() {
           </div>
         </div>
       </div>
- 
+
       <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-12 h-[60px] border-b border-[#1e1c16] backdrop-blur-md" style={{background:'rgba(8,8,6,0.92)'}}>
         <div className="flex items-center gap-3">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="flex flex-col gap-[5px] justify-center w-8 h-8 bg-transparent border-none cursor-pointer p-1 rounded-md hover:bg-[#1a1812]">
@@ -563,7 +563,7 @@ export default function Home() {
           )}
         </div>
       </nav>
- 
+
       <section id="home" className="min-h-screen flex flex-col items-center justify-center text-center px-12 pt-[110px] pb-20 relative overflow-hidden">
         <div className="absolute inset-0" style={{backgroundImage:'linear-gradient(rgba(255,107,26,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,107,26,.03) 1px,transparent 1px)',backgroundSize:'58px 58px',maskImage:'radial-gradient(ellipse 80% 70% at 50% 50%,black 20%,transparent 100%)'}}></div>
         <div className="absolute bottom-0 left-0 right-0 h-[280px] pointer-events-none" style={{background:'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(255,107,26,.18) 0%, rgba(255,80,0,.08) 40%, transparent 70%)'}}></div>
@@ -592,7 +592,7 @@ export default function Home() {
           </div>
         </div>
       </section>
- 
+
       <div className="border-t border-b border-[#1e1c16] bg-[#0f0e0b] py-[9px] overflow-hidden">
         <div className="flex gap-11 whitespace-nowrap" style={{animation:'ticker 28s linear infinite',width:'max-content'}}>
           {[...TICKS,...TICKS].map((t,i) => (
@@ -606,7 +606,7 @@ export default function Home() {
           ))}
         </div>
       </div>
- 
+
       <section id="how" className="py-[90px] px-12 bg-[#0f0e0b] border-t border-b border-[#1e1c16]">
         <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">How it works</div>
         <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>THREE STEPS.<br/>PURE PROFIT.</h2>
@@ -625,7 +625,7 @@ export default function Home() {
           ))}
         </div>
       </section>
- 
+
       <section id="features" className="py-[90px] px-12 bg-[#080806]">
         <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">Features</div>
         <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>EVERYTHING YOU<br/>NEED TO WIN.</h2>
@@ -647,7 +647,7 @@ export default function Home() {
           ))}
         </div>
       </section>
- 
+
       <section id="preview" className="py-[90px] px-12 bg-[#0f0e0b] border-t border-b border-[#1e1c16]">
         <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">Live preview</div>
         <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>THIS IS WHAT<br/>PROFIT LOOKS LIKE.</h2>
@@ -692,7 +692,7 @@ export default function Home() {
           ))}
         </div>
       </section>
- 
+
       <section id="pricing" className="py-[90px] px-12 bg-[#080806]">
         <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">Pricing</div>
         <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>PAY FOR WHAT<br/>YOU WIN WITH.</h2>
@@ -721,7 +721,7 @@ export default function Home() {
           ))}
         </div>
       </section>
- 
+
       <section id="faq" className="py-[90px] px-12 bg-[#0f0e0b] border-t border-b border-[#1e1c16]">
         <div className="max-w-[720px] mx-auto">
           <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">FAQ</div>
@@ -741,7 +741,7 @@ export default function Home() {
           </div>
         </div>
       </section>
- 
+
       <div className="py-[90px] px-12 text-center bg-[#080806] border-t border-[#1e1c16] relative overflow-hidden">
         <div className="absolute inset-0" style={{background:'radial-gradient(ellipse 55% 80% at 50% 50%,rgba(255,107,26,.06) 0%,transparent 70%)'}}></div>
         <div className="relative z-10">
@@ -754,7 +754,7 @@ export default function Home() {
           </div>
         </div>
       </div>
- 
+
       <section id="contact" className="py-[90px] px-12 bg-[#080806]">
         <div className="text-center mb-14">
           <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">Contact</div>
@@ -784,7 +784,7 @@ export default function Home() {
           )}
         </div>
       </section>
- 
+
       <footer className="bg-[#0f0e0b] border-t border-[#1e1c16] px-12 py-10 flex items-center justify-between flex-wrap gap-5">
         <div className="text-[22px] font-black tracking-tight">FLUX<span className="text-[#ff6b1a]">ODDS</span></div>
         <div className="flex gap-6">
@@ -794,7 +794,7 @@ export default function Home() {
         </div>
         <div className="text-[#2a2820] text-[13px] font-medium">© 2025 FluxOdds. All rights reserved.</div>
       </footer>
- 
+
       {loginOpen && (
         <>
           <div className="fixed inset-0 z-[200] backdrop-blur-sm" style={{background:'rgba(0,0,0,0.8)'}} onClick={() => setLoginOpen(false)}></div>
@@ -828,7 +828,7 @@ export default function Home() {
           </div>
         </>
       )}
- 
+
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         @keyframes ticker { from { transform: translateX(0) } to { transform: translateX(-50%) } }
@@ -836,4 +836,3 @@ export default function Home() {
     </div>
   )
 }
- 
