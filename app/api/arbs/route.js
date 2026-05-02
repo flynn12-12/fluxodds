@@ -104,7 +104,7 @@ export const maxDuration = 30
 export async function GET() {
   try {
     const res = await fetch(
-      `https://api.sportsgameodds.com/v2/events?apiKey=${API_KEY}&leagueID=MLB,NBA,NHL,NFL,SOCCER&oddsAvailable=true&limit=50`,
+      `https://api.sportsgameodds.com/v2/events?apiKey=${API_KEY}&leagueID=MLB,NBA,NHL,NFL,SOCCER,ATP,TENNIS&oddsAvailable=true&limit=50&startsAfter=${new Date().toISOString()}`,
       { cache: 'no-store' }
     )
     const data = await res.json()
