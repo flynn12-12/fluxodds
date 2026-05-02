@@ -104,8 +104,7 @@ export default function Home() {
  
   const scanTime = secs < 60 ? `${secs}s ago` : `${Math.floor(secs/60)}m ago`
  
-  const filtered = (liveData.length > 0 ? liveData : DATA).filter(a => {
-    if (sport !== 'all' && a.sport !== sport) return false
+const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ? DATA : []).filter(a => {    if (sport !== 'all' && a.sport !== sport) return false
     if (a.profit < minP) return false
     if (query && !a.game.toLowerCase().includes(query) && !a.bA.toLowerCase().includes(query) && !a.bB.toLowerCase().includes(query)) return false
     return true
