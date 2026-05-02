@@ -47,11 +47,11 @@ export default function Home() {
   const [contactSent, setContactSent] = useState(false)
   const [signupEmail, setSignupEmail] = useState('')
   const [signupPassword, setSignupPassword] = useState('')
-  const [userPlan, setUserPlan] = useState('free')
+  const [userPlan, setUserPlan] = useState(null) // null=loading, 'free' or 'pro' after load
   const [user, setUser] = useState(null)
   const [liveData, setLiveData] = useState([])
-  const [dataLoading, setDataLoading] = useState(true)
  
+  // Auth + plan loading
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
@@ -61,7 +61,9 @@ export default function Home() {
           .select('plan')
           .eq('user_id', session.user.id)
           .single()
-        if (profile) setUserPlan(profile.plan)
+        setUserPlan(profile?.plan || 'free')
+      } else {
+        setUserPlan('free')
       }
     })
     supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -72,29 +74,28 @@ export default function Home() {
           .select('plan')
           .eq('user_id', session.user.id)
           .single()
-        if (profile) setUserPlan(profile.plan)
+        setUserPlan(profile?.plan || 'free')
       } else {
         setUserPlan('free')
       }
     })
   }, [])
  
+  // Timer
   useEffect(() => {
     const t = setInterval(() => setSecs(s => s + 1), 1000)
     return () => clearInterval(t)
   }, [])
-
+ 
+  // Live arb fetching
   useEffect(() => {
     const fetchArbs = async () => {
       try {
         const res = await fetch('/api/arbs')
         const data = await res.json()
-        console.log('arbs fetched:', data.total, data.arbs?.length)
         if (data.arbs && data.arbs.length > 0) setLiveData(data.arbs)
       } catch (e) {
         console.error('Failed to fetch arbs:', e)
-      } finally {
-        setDataLoading(false)
       }
     }
     fetchArbs()
@@ -104,11 +105,17 @@ export default function Home() {
  
   const scanTime = secs < 60 ? `${secs}s ago` : `${Math.floor(secs/60)}m ago`
  
-const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ? DATA : []).filter(a => {    if (sport !== 'all' && a.sport !== sport) return false
+  const displayData = liveData.length > 0 ? liveData : DATA
+ 
+  const filtered = displayData.filter(a => {
+    if (sport !== 'all' && a.sport !== sport) return false
     if (a.profit < minP) return false
     if (query && !a.game.toLowerCase().includes(query) && !a.bA.toLowerCase().includes(query) && !a.bB.toLowerCase().includes(query)) return false
     return true
   })
+ 
+  // Only blur if we KNOW user is free (not null/loading)
+  const shouldBlur = (a) => userPlan === 'free' && a.profit > 2
  
   const openTool = (name) => {
     if (!user) { setLoginOpen(true); return }
@@ -210,7 +217,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
   // ─── DASHBOARD ───────────────────────────────────────────────────────────────
   if (view === 'dashboard') return (
     <div style={{fontFamily:"'Inter',sans-serif"}} className="flex flex-col h-screen bg-[#080806] text-[#eef1f5] overflow-hidden">
-      {/* Topbar */}
       <div className="h-[52px] flex-shrink-0 flex items-center justify-between px-5 bg-[#0f0e0b] border-b border-[#1e1c16]">
         <div className="flex items-center gap-3">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="flex flex-col gap-[5px] justify-center w-8 h-8 border-none cursor-pointer p-1 rounded-md hover:bg-[#1a1812] bg-transparent">
@@ -230,7 +236,7 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
           </div>
           <div className="w-px h-7 bg-[#1e1c16]"></div>
           <div className="text-right">
-            <div className="text-[15px] font-bold text-[#ff6b1a]">+{DATA[0].profit}%</div>
+            <div className="text-[15px] font-bold text-[#ff6b1a]">+{filtered[0]?.profit || 0}%</div>
             <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">Best profit</div>
           </div>
           <div className="w-px h-7 bg-[#1e1c16]"></div>
@@ -241,7 +247,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
       </div>
  
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
         {sidebarOpen && (
           <div className="w-[240px] min-w-[240px] bg-[#0f0e0b] border-r border-[#1e1c16] flex flex-col overflow-y-auto flex-shrink-0">
             <div className="px-3 pt-5 pb-2">
@@ -284,7 +289,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
           </div>
         )}
  
-        {/* Main */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {dashView === 'home' ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center px-6 relative overflow-hidden">
@@ -323,7 +327,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
             </div>
           ) : (
             <div className="flex flex-col flex-1 overflow-hidden">
-              {/* Tool bar */}
               <div className="px-5 pt-3 pb-3 bg-[#0f0e0b] border-b border-[#1e1c16] flex-shrink-0">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-[22px] font-black tracking-tight">{toolName}</div>
@@ -357,7 +360,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
                 </div>
               </div>
  
-              {/* Table */}
               <div className="flex-1 overflow-y-auto">
                 <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'2fr 1fr 1fr 90px 100px'}}>
                   <span>Game</span><span>Book A</span><span>Book B</span><span>Profit</span><span>Stakes ($100)</span>
@@ -368,8 +370,8 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
                     <div className="text-[15px] font-bold text-[#eef1f5]">No arbs match your filters</div>
                   </div>
                 ) : filtered.map((a, i) => (
-                  <div key={i} onClick={() => userPlan !== 'free' || a.profit <= 2 ? setSelectedArb(a) : null}
-                    className={`grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors ${userPlan !== null && userPlan !== 'pro' && a.profit > 2 ? 'relative cursor-default select-none' : 'cursor-pointer hover:bg-[#0f0e0b]'}`}
+                  <div key={i} onClick={() => !shouldBlur(a) ? setSelectedArb(a) : null}
+                    className={`grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors ${shouldBlur(a) ? 'relative cursor-default select-none' : 'cursor-pointer hover:bg-[#0f0e0b]'}`}
                     style={{gridTemplateColumns:'2fr 1fr 1fr 90px 100px'}}>
                     <div>
                       <div className="text-[13px] font-semibold mb-[4px]">{a.game}</div>
@@ -388,7 +390,7 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
                     </div>
                     <div className="text-[18px] font-black text-[#ff6b1a]">+{a.profit}%</div>
                     <div className="text-[12px] text-[#7a8a96] font-medium">${a.sA} / ${a.sB}</div>
-                    {userPlan !== null && userPlan !== 'pro' && a.profit > 2 && <div className="absolute inset-0 backdrop-blur-sm bg-[#080806]/60 flex items-center justify-center"><span className="text-[12px] font-bold text-[#ff6b1a] bg-[#0f0e0b] border border-[#ff6b1a]/30 px-3 py-1 rounded-full">🔒 Pro only</span></div>}
+                    {shouldBlur(a) && <div className="absolute inset-0 backdrop-blur-sm bg-[#080806]/60 flex items-center justify-center"><span className="text-[12px] font-bold text-[#ff6b1a] bg-[#0f0e0b] border border-[#ff6b1a]/30 px-3 py-1 rounded-full">🔒 Pro only</span></div>}
                   </div>
                 ))}
               </div>
@@ -404,7 +406,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
         </div>
       </div>
  
-      {/* Detail panel */}
       {selectedArb && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSelectedArb(null)}></div>
@@ -503,7 +504,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
         </div>
       </div>
  
-      {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-12 h-[60px] border-b border-[#1e1c16] backdrop-blur-md" style={{background:'rgba(8,8,6,0.92)'}}>
         <div className="flex items-center gap-3">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="flex flex-col gap-[5px] justify-center w-8 h-8 bg-transparent border-none cursor-pointer p-1 rounded-md hover:bg-[#1a1812]">
@@ -535,7 +535,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
         </div>
       </nav>
  
-      {/* Hero */}
       <section id="home" className="min-h-screen flex flex-col items-center justify-center text-center px-12 pt-[110px] pb-20 relative overflow-hidden">
         <div className="absolute inset-0" style={{backgroundImage:'linear-gradient(rgba(255,107,26,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,107,26,.03) 1px,transparent 1px)',backgroundSize:'58px 58px',maskImage:'radial-gradient(ellipse 80% 70% at 50% 50%,black 20%,transparent 100%)'}}></div>
         <div className="absolute bottom-0 left-0 right-0 h-[280px] pointer-events-none" style={{background:'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(255,107,26,.18) 0%, rgba(255,80,0,.08) 40%, transparent 70%)'}}></div>
@@ -565,7 +564,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
         </div>
       </section>
  
-      {/* Ticker */}
       <div className="border-t border-b border-[#1e1c16] bg-[#0f0e0b] py-[9px] overflow-hidden">
         <div className="flex gap-11 whitespace-nowrap" style={{animation:'ticker 28s linear infinite',width:'max-content'}}>
           {[...TICKS,...TICKS].map((t,i) => (
@@ -580,7 +578,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
         </div>
       </div>
  
-      {/* How it works */}
       <section id="how" className="py-[90px] px-12 bg-[#0f0e0b] border-t border-b border-[#1e1c16]">
         <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">How it works</div>
         <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>THREE STEPS.<br/>PURE PROFIT.</h2>
@@ -600,7 +597,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
         </div>
       </section>
  
-      {/* Features */}
       <section id="features" className="py-[90px] px-12 bg-[#080806]">
         <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">Features</div>
         <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>EVERYTHING YOU<br/>NEED TO WIN.</h2>
@@ -623,7 +619,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
         </div>
       </section>
  
-      {/* Live preview */}
       <section id="preview" className="py-[90px] px-12 bg-[#0f0e0b] border-t border-b border-[#1e1c16]">
         <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">Live preview</div>
         <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>THIS IS WHAT<br/>PROFIT LOOKS LIKE.</h2>
@@ -664,7 +659,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
         </div>
       </section>
  
-      {/* Pricing */}
       <section id="pricing" className="py-[90px] px-12 bg-[#080806]">
         <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">Pricing</div>
         <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>PAY FOR WHAT<br/>YOU WIN WITH.</h2>
@@ -694,7 +688,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
         </div>
       </section>
  
-      {/* FAQ */}
       <section id="faq" className="py-[90px] px-12 bg-[#0f0e0b] border-t border-b border-[#1e1c16]">
         <div className="max-w-[720px] mx-auto">
           <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">FAQ</div>
@@ -715,7 +708,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
         </div>
       </section>
  
-      {/* CTA */}
       <div className="py-[90px] px-12 text-center bg-[#080806] border-t border-[#1e1c16] relative overflow-hidden">
         <div className="absolute inset-0" style={{background:'radial-gradient(ellipse 55% 80% at 50% 50%,rgba(255,107,26,.06) 0%,transparent 70%)'}}></div>
         <div className="relative z-10">
@@ -729,7 +721,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
         </div>
       </div>
  
-      {/* Contact */}
       <section id="contact" className="py-[90px] px-12 bg-[#080806]">
         <div className="text-center mb-14">
           <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">Contact</div>
@@ -760,7 +751,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
         </div>
       </section>
  
-      {/* Footer */}
       <footer className="bg-[#0f0e0b] border-t border-[#1e1c16] px-12 py-10 flex items-center justify-between flex-wrap gap-5">
         <div className="text-[22px] font-black tracking-tight">FLUX<span className="text-[#ff6b1a]">ODDS</span></div>
         <div className="flex gap-6">
@@ -771,7 +761,6 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
         <div className="text-[#2a2820] text-[13px] font-medium">© 2025 FluxOdds. All rights reserved.</div>
       </footer>
  
-      {/* Login modal */}
       {loginOpen && (
         <>
           <div className="fixed inset-0 z-[200] backdrop-blur-sm" style={{background:'rgba(0,0,0,0.8)'}} onClick={() => setLoginOpen(false)}></div>
