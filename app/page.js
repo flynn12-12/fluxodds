@@ -369,7 +369,7 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
                   </div>
                 ) : filtered.map((a, i) => (
                   <div key={i} onClick={() => userPlan !== 'free' || a.profit <= 2 ? setSelectedArb(a) : null}
-                    className={`grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors ${userPlan === 'free' && a.profit > 2 ? 'relative cursor-default select-none' : 'cursor-pointer hover:bg-[#0f0e0b]'}`}
+                    className={`grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors ${userPlan !== null && userPlan !== 'pro' && a.profit > 2 ? 'relative cursor-default select-none' : 'cursor-pointer hover:bg-[#0f0e0b]'}`}
                     style={{gridTemplateColumns:'2fr 1fr 1fr 90px 100px'}}>
                     <div>
                       <div className="text-[13px] font-semibold mb-[4px]">{a.game}</div>
@@ -388,7 +388,7 @@ const filtered = (!dataLoading && liveData.length > 0 ? liveData : dataLoading ?
                     </div>
                     <div className="text-[18px] font-black text-[#ff6b1a]">+{a.profit}%</div>
                     <div className="text-[12px] text-[#7a8a96] font-medium">${a.sA} / ${a.sB}</div>
-                    {userPlan === 'free' && a.profit > 2 && <div className="absolute inset-0 backdrop-blur-sm bg-[#080806]/60 flex items-center justify-center"><span className="text-[12px] font-bold text-[#ff6b1a] bg-[#0f0e0b] border border-[#ff6b1a]/30 px-3 py-1 rounded-full">🔒 Pro only</span></div>}
+                    {userPlan !== null && userPlan !== 'pro' && a.profit > 2 && <div className="absolute inset-0 backdrop-blur-sm bg-[#080806]/60 flex items-center justify-center"><span className="text-[12px] font-bold text-[#ff6b1a] bg-[#0f0e0b] border border-[#ff6b1a]/30 px-3 py-1 rounded-full">🔒 Pro only</span></div>}
                   </div>
                 ))}
               </div>
