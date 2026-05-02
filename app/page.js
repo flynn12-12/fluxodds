@@ -2,22 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
  
-const DATA = [
-  {sport:'soccer',game:'PSG vs Bayern',time:'Wed 3:00 PM ET',bA:'Unibet',oA:'+290',bB:'DraftKings',oB:'-335',profit:5.1,sA:54,sB:46,market:'Moneyline'},
-  {sport:'soccer',game:'Man City vs Arsenal',time:'Tomorrow 3:00 PM ET',bA:'FanDuel',oA:'+320',bB:'Unibet',oB:'-375',profit:4.7,sA:54,sB:46,market:'Moneyline'},
-  {sport:'soccer',game:'Liverpool vs Chelsea',time:'Sat 12:30 PM ET',bA:'BetRivers',oA:'+260',bB:'FanDuel',oB:'-310',profit:3.8,sA:55,sB:45,market:'Moneyline'},
-  {sport:'nba',game:'Lakers vs Celtics',time:'Tomorrow 7:30 PM ET',bA:'DraftKings',oA:'+185',bB:'FanDuel',oB:'-198',profit:3.2,sA:52,sB:48,market:'Moneyline'},
-  {sport:'nba',game:'Warriors vs Nuggets',time:'Tomorrow 9:00 PM ET',bA:'Caesars',oA:'+210',bB:'PointsBet',oB:'-238',profit:2.9,sA:53,sB:47,market:'Moneyline'},
-  {sport:'tennis',game:'Djokovic vs Alcaraz',time:'Tomorrow 11:00 AM ET',bA:'Unibet',oA:'+175',bB:'BetMGM',oB:'-192',profit:2.4,sA:54,sB:46,market:'Match Winner'},
-  {sport:'nba',game:'Bucks vs 76ers',time:'Sat 8:00 PM ET',bA:'PointsBet',oA:'+165',bB:'BetMGM',oB:'-180',profit:2.2,sA:55,sB:45,market:'Moneyline'},
-  {sport:'nfl',game:'Chiefs vs Ravens',time:'Sun 4:25 PM ET',bA:'PointsBet',oA:'-108',bB:'BetRivers',oB:'-105',profit:2.1,sA:51,sB:49,market:'Spread -3.5'},
-  {sport:'tennis',game:'Sinner vs Medvedev',time:'Sat 10:00 AM ET',bA:'BetMGM',oA:'+145',bB:'BetRivers',oB:'-158',profit:1.9,sA:61,sB:39,market:'Match Winner'},
-  {sport:'mlb',game:'Yankees vs Red Sox',time:'Tomorrow 1:05 PM ET',bA:'BetMGM',oA:'+145',bB:'Caesars',oB:'-162',profit:1.8,sA:62,sB:38,market:'Moneyline'},
-  {sport:'nfl',game:'Bills vs Dolphins',time:'Sun 1:00 PM ET',bA:'DraftKings',oA:'-112',bB:'Caesars',oB:'-106',profit:1.6,sA:51,sB:49,market:'Spread -2.5'},
-  {sport:'mlb',game:'Dodgers vs Padres',time:'Tomorrow 10:10 PM ET',bA:'BetRivers',oA:'-118',bB:'FanDuel',oB:'-108',profit:1.4,sA:52,sB:48,market:'Runline'},
-  {sport:'nhl',game:'Bruins vs Leafs',time:'Tomorrow 7:00 PM ET',bA:'BetMGM',oA:'+135',bB:'DraftKings',oB:'-148',profit:1.2,sA:60,sB:40,market:'Moneyline'},
-  {sport:'nhl',game:'Rangers vs Penguins',time:'Tomorrow 7:30 PM ET',bA:'FanDuel',oA:'+120',bB:'Caesars',oB:'-130',profit:1.1,sA:57,sB:43,market:'Moneyline'},
-].sort((a,b) => b.profit - a.profit)
+const DATA = []
  
 const TICKS = [
   {game:'PSG vs Bayern',sport:'Soccer',profit:'+5.1%',books:'Unibet / DraftKings'},
