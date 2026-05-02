@@ -1,4 +1,3 @@
-export const revalidate = 30
 export const maxDuration = 30
 
 const API_KEY = '79c293ec2b367b3db5f733d9ba433876'
