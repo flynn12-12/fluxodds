@@ -1,6 +1,8 @@
+export const revalidate = 60
+
 const API_KEY = '79c293ec2b367b3db5f733d9ba433876'
 
-export const revalidate = 60
+const BAD_BOOKS = new Set(['unknown', 'kalshi', 'polymarket', 'sporttrade', 'novig'])
 
 function toDecimal(american) {
   if (!american) return null
@@ -11,28 +13,20 @@ function toDecimal(american) {
 }
 
 const OPPOSING_SIDES = {
-  'home': 'away',
-  'away': 'home',
-  'over': 'under',
-  'under': 'over',
-  'yes': 'no',
-  'no': 'yes',
+  'home': 'away', 'away': 'home',
+  'over': 'under', 'under': 'over',
+  'yes': 'no', 'no': 'yes',
 }
 
 const SPORT_MAP = {
-  'BASEBALL': 'mlb',
-  'BASKETBALL': 'nba',
-  'FOOTBALL': 'nfl',
-  'HOCKEY': 'nhl',
-  'SOCCER': 'soccer',
-  'TENNIS': 'tennis',
+  'BASEBALL': 'mlb', 'BASKETBALL': 'nba', 'FOOTBALL': 'nfl',
+  'HOCKEY': 'nhl', 'SOCCER': 'soccer', 'TENNIS': 'tennis',
 }
 
 function findArbs(events) {
   const arbs = []
 
   for (const event of events) {
-    // Skip live events - prematch only
     if (event.status?.started || event.status?.live) continue
 
     const gameName = `${event.teams?.away?.names?.medium || 'Away'} vs ${event.teams?.home?.names?.medium || 'Home'}`
@@ -42,7 +36,6 @@ function findArbs(events) {
 
     if (!odds || typeof odds !== 'object') continue
 
-    // Only look at oddIDs that have an opposing side
     for (const [oddID, oddData] of Object.entries(odds)) {
       if (!oddData?.byBookmaker) continue
       if (!oddData.bookOddsAvailable) continue
@@ -53,19 +46,17 @@ function findArbs(events) {
       const opposingSideID = OPPOSING_SIDES[sideID]
       if (!opposingSideID) continue
 
-      // Build opposing oddID
       const opposingOddID = [...parts.slice(0, -1), opposingSideID].join('-')
       const opposingOddData = odds[opposingOddID]
       if (!opposingOddData?.byBookmaker) continue
       if (!opposingOddData.bookOddsAvailable) continue
 
-      // Only process each pair once (home before away, over before under)
       if (sideID === 'away' || sideID === 'under' || sideID === 'no') continue
 
-      // Get all prices for side A and side B
       const sidePrices = []
       for (const [bookmaker, bookData] of Object.entries(oddData.byBookmaker)) {
         if (!bookData?.available) continue
+        if (BAD_BOOKS.has(bookmaker.toLowerCase())) continue
         const price = parseFloat(bookData?.odds)
         if (!isNaN(price)) sidePrices.push({ bookmaker, price })
       }
@@ -73,11 +64,11 @@ function findArbs(events) {
       const opposingPrices = []
       for (const [bookmaker, bookData] of Object.entries(opposingOddData.byBookmaker)) {
         if (!bookData?.available) continue
+        if (BAD_BOOKS.has(bookmaker.toLowerCase())) continue
         const price = parseFloat(bookData?.odds)
         if (!isNaN(price)) opposingPrices.push({ bookmaker, price })
       }
 
-      // Find arbs across bookmakers
       for (const a of sidePrices) {
         for (const b of opposingPrices) {
           if (a.bookmaker === b.bookmaker) continue
@@ -85,16 +76,15 @@ function findArbs(events) {
           const decB = toDecimal(b.price)
           if (!decA || !decB) continue
           const total = (1 / decA) + (1 / decB)
-          if (total < 1) {
-            if (parseFloat(profit) > 15) continue
-            const profit = ((1 - total) * 100).toFixed(2)
+          const profitPct = (1 - total) * 100
+          if (profitPct > 0 && profitPct <= 20) {
             arbs.push({
               game: gameName, sport, time,
               bA: a.bookmaker,
               oA: a.price > 0 ? `+${a.price}` : `${a.price}`,
               bB: b.bookmaker,
               oB: b.price > 0 ? `+${b.price}` : `${b.price}`,
-              profit: parseFloat(profit),
+              profit: parseFloat(profitPct.toFixed(2)),
               sA: Math.round((1/decA)/total*100),
               sB: Math.round((1/decB)/total*100),
               market: oddData.marketName || oddID,
