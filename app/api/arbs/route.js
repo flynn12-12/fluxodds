@@ -151,7 +151,7 @@ export async function GET() {
   try {
     // Exactly as per official docs: finalized=false for upcoming games, x-api-key header
     const res = await fetch(
-      `${API_BASE}/events?leagueID=MLB,NBA,NHL,NFL,SOCCER,ATP,TENNIS&finalized=false&oddsAvailable=true&limit=100`,
+      `${API_BASE}/events?leagueID=MLB,NBA,NHL,NFL,EPL,MLS,ATP&finalized=false&oddsAvailable=true&limit=100`,
       {
         headers: { 'x-api-key': API_KEY },
         cache: 'no-store',
