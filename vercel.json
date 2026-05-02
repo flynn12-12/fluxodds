@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "app/api/cron/scan/route.js": {
+      "maxDuration": 30
+    }
+  }
+}
