@@ -1,5 +1,7 @@
 const API_KEY = '79c293ec2b367b3db5f733d9ba433876'
 
+export const revalidate = 60
+
 function toDecimal(american) {
   if (!american) return null
   const n = parseFloat(american)
@@ -111,7 +113,7 @@ export async function GET() {
   try {
     const res = await fetch(
       `https://api.sportsgameodds.com/v2/events?apiKey=${API_KEY}&leagueID=MLB,NBA,NHL,NFL&oddsAvailable=true&limit=50`,
-      { next: { revalidate: 10 } }
+      { next: { revalidate: 60 } }
     )
     const data = await res.json()
     const events = data.data || []
