@@ -14,6 +14,27 @@ const TICKS = [
 ]
  
 const SPORT_TAG = 'bg-[#1e1c16] text-[#7a8a96] border border-[#2a2820] text-[9px] font-semibold px-[6px] py-[1px] rounded'
+const MARKET_TAG = 'bg-orange-900/10 text-[#ff6b1a] border border-orange-800/20 text-[9px] font-semibold px-[6px] py-[1px] rounded'
+ 
+// Strip trailing " on bookmakerName" from a bet label so we can show the bet
+// and the bookmaker separately in the UI.
+const cleanBet = (betStr, bookmaker) => {
+  if (!betStr) return ''
+  if (!bookmaker) return betStr
+  return betStr.replace(new RegExp(`\\s+on\\s+${bookmaker}$`, 'i')).trim()
+}
+ 
+// Pretty-print game start time
+const fmtTime = (iso) => {
+  if (!iso) return ''
+  try {
+    const d = new Date(iso)
+    return d.toLocaleString(undefined, {
+      month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit'
+    })
+  } catch { return iso }
+}
  
 export default function Home() {
   const [view, setView] = useState('marketing')
@@ -32,7 +53,7 @@ export default function Home() {
   const [contactSent, setContactSent] = useState(false)
   const [signupEmail, setSignupEmail] = useState('')
   const [signupPassword, setSignupPassword] = useState('')
-  const [userPlan, setUserPlan] = useState(null) // null=loading, 'free' or 'pro' after load
+  const [userPlan, setUserPlan] = useState(null)
   const [user, setUser] = useState(null)
   const [liveData, setLiveData] = useState([])
  
@@ -66,40 +87,45 @@ export default function Home() {
     })
   }, [])
  
-  // Timer
+  // Timer (resets each scan, used for "last scan" display)
   useEffect(() => {
     const t = setInterval(() => setSecs(s => s + 1), 1000)
     return () => clearInterval(t)
   }, [])
  
- // Live arb fetching — polls every 1 second for real-time updates
-useEffect(() => {
-  let cancelled = false
-  const fetchArbs = async () => {
-    try {
-      const res = await fetch('/api/arbs', { cache: 'no-store' })
-      const data = await res.json()
-      if (!cancelled) setLiveData(data.arbs || [])
-    } catch (e) {
-      console.error('Failed to fetch arbs:', e)
+  // Live arb fetching — polls every 1 second for real-time updates
+  useEffect(() => {
+    let cancelled = false
+    const fetchArbs = async () => {
+      try {
+        const res = await fetch('/api/arbs', { cache: 'no-store' })
+        const data = await res.json()
+        if (!cancelled) {
+          setLiveData(data.arbs || [])
+          setSecs(0)
+        }
+      } catch (e) {
+        console.error('Failed to fetch arbs:', e)
+      }
     }
-  }
-  fetchArbs()
-  const interval = setInterval(fetchArbs, 1000)
-  return () => {
-    cancelled = true
-    clearInterval(interval)
-  }
-}, [])
+    fetchArbs()
+    const interval = setInterval(fetchArbs, 1000)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
+  }, [])
  
   const scanTime = secs < 60 ? `${secs}s ago` : `${Math.floor(secs/60)}m ago`
  
- const displayData = liveData
+  const displayData = liveData
  
   const filtered = displayData.filter(a => {
     if (sport !== 'all' && a.sport !== sport) return false
     if (a.profit < minP) return false
-    if (query && !a.game.toLowerCase().includes(query) && !a.bA.toLowerCase().includes(query) && !a.bB.toLowerCase().includes(query)) return false
+    if (query && !a.game.toLowerCase().includes(query)
+      && !(a.bA || '').toLowerCase().includes(query)
+      && !(a.bB || '').toLowerCase().includes(query)) return false
     return true
   })
  
@@ -325,7 +351,7 @@ useEffect(() => {
                   </div>
                 </div>
                 <div className="flex items-center gap-[5px] flex-wrap">
-                  {['all','nba','nfl','mlb','nhl','soccer','tennis'].map(s => (
+                  {['all','nba','nfl','mlb','nhl','epl','mls','atp'].map(s => (
                     <button key={s} onClick={() => setSport(s)}
                       className={`px-[10px] py-[5px] rounded-md text-[12px] font-medium transition-all cursor-pointer border ${sport===s?'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]':'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
                       style={{fontFamily:"'Inter',sans-serif"}}>
@@ -350,32 +376,36 @@ useEffect(() => {
               </div>
  
               <div className="flex-1 overflow-y-auto">
-                <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'2fr 1fr 1fr 90px 100px'}}>
-                  <span>Game</span><span>Book A</span><span>Book B</span><span>Profit</span><span>Stakes ($100)</span>
+                <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 80px 100px'}}>
+                  <span>Game</span><span>Bet A</span><span>Bet B</span><span>Profit</span><span>Stakes ($100)</span>
                 </div>
                 {filtered.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-64 text-[#5a6a78]">
                     <div className="text-3xl opacity-30 mb-3">◎</div>
-                    <div className="text-[15px] font-bold text-[#eef1f5]">No arbs match your filters</div>
+                    <div className="text-[15px] font-bold text-[#eef1f5]">No arbitrage opportunities right now</div>
+                    <div className="text-[12px] mt-1">Scanning every 5 seconds — check back soon</div>
                   </div>
                 ) : filtered.map((a, i) => (
-                  <div key={i} onClick={() => !shouldBlur(a) ? setSelectedArb(a) : null}
+                  <div key={a.fingerprint || i} onClick={() => !shouldBlur(a) ? setSelectedArb(a) : null}
                     className={`grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors ${shouldBlur(a) ? 'relative cursor-default select-none' : 'cursor-pointer hover:bg-[#0f0e0b]'}`}
-                    style={{gridTemplateColumns:'2fr 1fr 1fr 90px 100px'}}>
+                    style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 80px 100px'}}>
                     <div>
                       <div className="text-[13px] font-semibold mb-[4px]">{a.game}</div>
-                      <div className="flex items-center gap-[6px]">
-                        <span className={SPORT_TAG}>{a.sport.toUpperCase()}</span>
-                        <span className="text-[11px] text-[#5a6a78] font-medium">{a.time}</span>
+                      <div className="flex items-center gap-[6px] flex-wrap">
+                        <span className={SPORT_TAG}>{(a.sport || '').toUpperCase()}</span>
+                        {a.market && <span className={MARKET_TAG}>{a.market}</span>}
+                        <span className="text-[11px] text-[#5a6a78] font-medium">{fmtTime(a.time)}</span>
                       </div>
                     </div>
                     <div>
-                      <div className="text-[13px] font-semibold mb-[2px]">{a.bA}</div>
-                      <div className="text-[12px] text-[#7a8a96] font-medium">{a.oA}</div>
+                      <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bA}</div>
+                      <div className="text-[13px] font-semibold leading-tight">{cleanBet(a.betA, a.bA)}</div>
+                      <div className="text-[12px] text-[#ff6b1a] font-semibold mt-[2px]">{a.oA}</div>
                     </div>
                     <div>
-                      <div className="text-[13px] font-semibold mb-[2px]">{a.bB}</div>
-                      <div className="text-[12px] text-[#7a8a96] font-medium">{a.oB}</div>
+                      <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bB}</div>
+                      <div className="text-[13px] font-semibold leading-tight">{cleanBet(a.betB, a.bB)}</div>
+                      <div className="text-[12px] text-[#ff6b1a] font-semibold mt-[2px]">{a.oB}</div>
                     </div>
                     <div className="text-[18px] font-black text-[#ff6b1a]">+{a.profit}%</div>
                     <div className="text-[12px] text-[#7a8a96] font-medium">${a.sA} / ${a.sB}</div>
@@ -398,11 +428,15 @@ useEffect(() => {
       {selectedArb && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSelectedArb(null)}></div>
-          <div className="fixed right-0 top-0 bottom-0 w-[330px] bg-[#0f0e0b] border-l border-[#1e1c16] z-50 flex flex-col" style={{fontFamily:"'Inter',sans-serif"}}>
+          <div className="fixed right-0 top-0 bottom-0 w-[360px] bg-[#0f0e0b] border-l border-[#1e1c16] z-50 flex flex-col" style={{fontFamily:"'Inter',sans-serif"}}>
             <div className="flex items-start justify-between p-4 border-b border-[#1e1c16]">
               <div>
                 <div className="text-[14px] font-bold mb-1">{selectedArb.game}</div>
-                <div className="text-[11px] text-[#5a6a78] font-medium">{selectedArb.sport.toUpperCase()} · {selectedArb.time} · {selectedArb.market}</div>
+                <div className="flex items-center gap-[6px] flex-wrap">
+                  <span className={SPORT_TAG}>{(selectedArb.sport || '').toUpperCase()}</span>
+                  {selectedArb.market && <span className={MARKET_TAG}>{selectedArb.market}</span>}
+                  <span className="text-[11px] text-[#5a6a78] font-medium">{fmtTime(selectedArb.time)}</span>
+                </div>
               </div>
               <button onClick={() => setSelectedArb(null)} className="text-[#5a6a78] text-lg hover:text-[#eef1f5] transition-colors bg-transparent border-none cursor-pointer">×</button>
             </div>
@@ -418,10 +452,16 @@ useEffect(() => {
                   style={{fontFamily:"'Inter',sans-serif"}}/>
               </div>
               <div className="text-[10px] font-semibold tracking-wider uppercase text-[#5a6a78] mb-2">Your bets</div>
-              {[{name:selectedArb.bA,odds:selectedArb.oA,stake:stakeA},{name:selectedArb.bB,odds:selectedArb.oB,stake:stakeB}].map((b,i) => (
-                <div key={i} className="flex items-center justify-between bg-[#1a1812] border border-[#1e1c16] rounded-xl px-3 py-[10px] mb-[5px]">
-                  <div className="text-[13px] font-semibold">{b.name}</div>
-                  <div className="text-right">
+              {[
+                {name:selectedArb.bA, odds:selectedArb.oA, stake:stakeA, bet:cleanBet(selectedArb.betA, selectedArb.bA)},
+                {name:selectedArb.bB, odds:selectedArb.oB, stake:stakeB, bet:cleanBet(selectedArb.betB, selectedArb.bB)}
+              ].map((b,i) => (
+                <div key={i} className="flex items-start justify-between bg-[#1a1812] border border-[#1e1c16] rounded-xl px-3 py-[10px] mb-[5px]">
+                  <div className="flex-1 min-w-0 pr-2">
+                    <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{b.name}</div>
+                    <div className="text-[13px] font-semibold leading-tight">{b.bet}</div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
                     <div className="text-[12px] text-[#ff6b1a] font-semibold">{b.odds}</div>
                     <div className="text-[13px] text-emerald-400 mt-[2px] font-semibold">${b.stake}</div>
                   </div>
@@ -621,25 +661,30 @@ useEffect(() => {
             <span className="w-[6px] h-[6px] rounded-full bg-emerald-400 animate-pulse ml-auto inline-block"></span>
             <span className="text-[11px] text-[#ff6b1a] ml-1 font-semibold">LIVE</span>
           </div>
-          <div className="grid text-[11px] font-semibold uppercase text-[#3a4a56] px-5 py-2 border-b border-[#1e1c16] tracking-wide" style={{gridTemplateColumns:'2fr 1fr 1fr 90px 100px'}}>
-            <span>Game</span><span>Book A</span><span>Book B</span><span>Profit</span><span>Stakes ($100)</span>
+          <div className="grid text-[11px] font-semibold uppercase text-[#3a4a56] px-5 py-2 border-b border-[#1e1c16] tracking-wide" style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 80px 100px'}}>
+            <span>Game</span><span>Bet A</span><span>Bet B</span><span>Profit</span><span>Stakes ($100)</span>
           </div>
-          {DATA.slice(0,5).map((a,i) => (
-            <div key={i} className="grid px-5 py-[12px] border-b border-[#1e1c16] items-center hover:bg-[#0f0e0b] transition-colors cursor-pointer last:border-none" style={{gridTemplateColumns:'2fr 1fr 1fr 90px 100px'}}>
+          {liveData.slice(0,5).length === 0 ? (
+            <div className="px-5 py-10 text-center text-[#5a6a78] text-[13px] font-medium">Loading live arbs…</div>
+          ) : liveData.slice(0,5).map((a,i) => (
+            <div key={a.fingerprint || i} className="grid px-5 py-[12px] border-b border-[#1e1c16] items-center hover:bg-[#0f0e0b] transition-colors cursor-pointer last:border-none" style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 80px 100px'}}>
               <div>
                 <div className="font-semibold text-[13px] mb-[4px]">{a.game}</div>
-                <div className="flex items-center gap-2">
-                  <span className={SPORT_TAG}>{a.sport.toUpperCase()}</span>
-                  <span className="text-[11px] text-[#5a6a78] font-medium">{a.time}</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={SPORT_TAG}>{(a.sport || '').toUpperCase()}</span>
+                  {a.market && <span className={MARKET_TAG}>{a.market}</span>}
+                  <span className="text-[11px] text-[#5a6a78] font-medium">{fmtTime(a.time)}</span>
                 </div>
               </div>
               <div>
-                <div className="text-[13px] font-semibold mb-[2px]">{a.bA}</div>
-                <div className="text-[12px] text-[#7a8a96] font-medium">{a.oA}</div>
+                <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bA}</div>
+                <div className="text-[13px] font-semibold leading-tight">{cleanBet(a.betA, a.bA)}</div>
+                <div className="text-[12px] text-[#ff6b1a] font-semibold mt-[2px]">{a.oA}</div>
               </div>
               <div>
-                <div className="text-[13px] font-semibold mb-[2px]">{a.bB}</div>
-                <div className="text-[12px] text-[#7a8a96] font-medium">{a.oB}</div>
+                <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bB}</div>
+                <div className="text-[13px] font-semibold leading-tight">{cleanBet(a.betB, a.bB)}</div>
+                <div className="text-[12px] text-[#ff6b1a] font-semibold mt-[2px]">{a.oB}</div>
               </div>
               <div className="text-[18px] font-black text-[#ff6b1a]">+{a.profit}%</div>
               <div className="text-[12px] text-[#7a8a96] font-medium">${a.sA} / ${a.sB}</div>
@@ -791,3 +836,4 @@ useEffect(() => {
     </div>
   )
 }
+ 
