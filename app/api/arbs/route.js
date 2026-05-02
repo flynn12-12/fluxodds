@@ -8,20 +8,39 @@ function toDecimal(american) {
   return (100 / Math.abs(n)) + 1
 }
 
+const OPPOSING_SIDES = {
+  'home': 'away',
+  'away': 'home',
+  'over': 'under',
+  'under': 'over',
+  'yes': 'no',
+  'no': 'yes',
+}
+
+const SPORT_MAP = {
+  'BASEBALL': 'mlb',
+  'BASKETBALL': 'nba',
+  'FOOTBALL': 'nfl',
+  'HOCKEY': 'nhl',
+  'SOCCER': 'soccer',
+  'TENNIS': 'tennis',
+}
+
 function findArbs(events) {
   const arbs = []
 
   for (const event of events) {
+    // Skip live events - prematch only
+    if (event.status?.started || event.status?.live) continue
+
     const gameName = `${event.teams?.away?.names?.medium || 'Away'} vs ${event.teams?.home?.names?.medium || 'Home'}`
-    const sport = (event.sportID || 'unknown').toLowerCase()
+    const sport = SPORT_MAP[event.sportID] || (event.sportID || 'unknown').toLowerCase()
     const time = event.startsAt || ''
     const odds = event.odds
 
     if (!odds || typeof odds !== 'object') continue
 
-    // Group by market (everything except last part = sideID)
-    const markets = {}
-
+    // Only look at oddIDs that have an opposing side
     for (const [oddID, oddData] of Object.entries(odds)) {
       if (!oddData?.byBookmaker) continue
       if (!oddData.bookOddsAvailable) continue
@@ -29,28 +48,36 @@ function findArbs(events) {
       const parts = oddID.split('-')
       if (parts.length < 2) continue
       const sideID = parts[parts.length - 1]
-      const marketKey = parts.slice(0, -1).join('-')
+      const opposingSideID = OPPOSING_SIDES[sideID]
+      if (!opposingSideID) continue
 
-      if (!markets[marketKey]) markets[marketKey] = {}
-      if (!markets[marketKey][sideID]) markets[marketKey][sideID] = []
+      // Build opposing oddID
+      const opposingOddID = [...parts.slice(0, -1), opposingSideID].join('-')
+      const opposingOddData = odds[opposingOddID]
+      if (!opposingOddData?.byBookmaker) continue
+      if (!opposingOddData.bookOddsAvailable) continue
 
+      // Only process each pair once (home before away, over before under)
+      if (sideID === 'away' || sideID === 'under' || sideID === 'no') continue
+
+      // Get all prices for side A and side B
+      const sidePrices = []
       for (const [bookmaker, bookData] of Object.entries(oddData.byBookmaker)) {
         if (!bookData?.available) continue
-        const price = bookData?.odds
-        if (price != null) {
-          markets[marketKey][sideID].push({ bookmaker, price: parseFloat(price) })
-        }
+        const price = parseFloat(bookData?.odds)
+        if (!isNaN(price)) sidePrices.push({ bookmaker, price })
       }
-    }
 
-    for (const [market, sides] of Object.entries(markets)) {
-      const sideKeys = Object.keys(sides)
-      if (sideKeys.length < 2) continue
-      const sideA = sides[sideKeys[0]] || []
-      const sideB = sides[sideKeys[1]] || []
+      const opposingPrices = []
+      for (const [bookmaker, bookData] of Object.entries(opposingOddData.byBookmaker)) {
+        if (!bookData?.available) continue
+        const price = parseFloat(bookData?.odds)
+        if (!isNaN(price)) opposingPrices.push({ bookmaker, price })
+      }
 
-      for (const a of sideA) {
-        for (const b of sideB) {
+      // Find arbs across bookmakers
+      for (const a of sidePrices) {
+        for (const b of opposingPrices) {
           if (a.bookmaker === b.bookmaker) continue
           const decA = toDecimal(a.price)
           const decB = toDecimal(b.price)
@@ -67,7 +94,7 @@ function findArbs(events) {
               profit: parseFloat(profit),
               sA: Math.round((1/decA)/total*100),
               sB: Math.round((1/decB)/total*100),
-              market,
+              market: oddData.marketName || oddID,
             })
           }
         }
@@ -83,7 +110,7 @@ export const maxDuration = 30
 export async function GET() {
   try {
     const res = await fetch(
-      `https://api.sportsgameodds.com/v2/events?apiKey=${API_KEY}&leagueID=MLB,NBA&oddsAvailable=true&limit=10`,
+      `https://api.sportsgameodds.com/v2/events?apiKey=${API_KEY}&leagueID=MLB,NBA,NHL,NFL&oddsAvailable=true&limit=20`,
       { cache: 'no-store' }
     )
     const data = await res.json()
