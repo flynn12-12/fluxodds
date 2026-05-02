@@ -86,6 +86,7 @@ function findArbs(events) {
           if (!decA || !decB) continue
           const total = (1 / decA) + (1 / decB)
           if (total < 1) {
+            if (parseFloat(profit) > 15) continue
             const profit = ((1 - total) * 100).toFixed(2)
             arbs.push({
               game: gameName, sport, time,
