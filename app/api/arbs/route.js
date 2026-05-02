@@ -1,13 +1,11 @@
 const API_KEY = '79c293ec2b367b3db5f733d9ba433876'
 
-const BAD_BOOKS = new Set(['unknown', 'kalshi', 'polymarket', 'sporttrade', 'novig', 'prophetexchange'])
-
 const SPORT_MAP = {
   'BASEBALL': 'mlb', 'BASKETBALL': 'nba', 'FOOTBALL': 'nfl',
   'HOCKEY': 'nhl', 'SOCCER': 'soccer', 'TENNIS': 'tennis',
 }
 
-const OPPOSING = {
+const OPPOSING_SIDES = {
   'home': 'away', 'away': 'home',
   'over': 'under', 'under': 'over',
   'yes': 'no', 'no': 'yes',
@@ -23,10 +21,8 @@ function toDecimal(american) {
 
 function findArbs(events) {
   const arbs = []
-
   for (const event of events) {
     if (event.status?.started || event.status?.live) continue
-
     const awayTeam = event.teams?.away?.names?.medium || 'Away'
     const homeTeam = event.teams?.home?.names?.medium || 'Home'
     const gameName = `${awayTeam} vs ${homeTeam}`
@@ -35,71 +31,71 @@ function findArbs(events) {
     const odds = event.odds
     if (!odds || typeof odds !== 'object') continue
 
-    // Group by marketBase + sideID
-    const groups = {}
     for (const [oddID, oddData] of Object.entries(odds)) {
       if (!oddData?.byBookmaker) continue
       if (!oddData.bookOddsAvailable) continue
       const parts = oddID.split('-')
       if (parts.length < 2) continue
       const sideID = parts[parts.length - 1]
-      const marketBase = parts.slice(0, -1).join('-')
-      if (!groups[marketBase]) groups[marketBase] = {}
-      if (!groups[marketBase][sideID]) groups[marketBase][sideID] = []
+      const opposingSideID = OPPOSING_SIDES[sideID]
+      if (!opposingSideID) continue
+      if (sideID === 'away' || sideID === 'under' || sideID === 'no') continue
+      const opposingOddID = [...parts.slice(0, -1), opposingSideID].join('-')
+      const opposingOddData = odds[opposingOddID]
+      if (!opposingOddData?.byBookmaker || !opposingOddData.bookOddsAvailable) continue
+
+      const sidePrices = []
       for (const [bk, bd] of Object.entries(oddData.byBookmaker)) {
         if (!bd?.available) continue
-        if (BAD_BOOKS.has(bk.toLowerCase())) continue
         const price = parseFloat(bd?.odds)
-        if (!isNaN(price)) groups[marketBase][sideID].push({ bk, price, marketName: oddData.marketName || marketBase })
+        if (!isNaN(price)) sidePrices.push({ bk, price })
       }
-    }
 
-    // Find arbs
-    for (const [marketBase, sides] of Object.entries(groups)) {
-      for (const [sideA, sideB] of [['home','away'],['over','under'],['yes','no']]) {
-        const pricesA = sides[sideA] || []
-        const pricesB = sides[sideB] || []
-        if (!pricesA.length || !pricesB.length) continue
+      const opposingPrices = []
+      for (const [bk, bd] of Object.entries(opposingOddData.byBookmaker)) {
+        if (!bd?.available) continue
+        const price = parseFloat(bd?.odds)
+        if (!isNaN(price)) opposingPrices.push({ bk, price })
+      }
 
-        for (const a of pricesA) {
-          for (const b of pricesB) {
-            if (a.bk === b.bk) continue
-            const decA = toDecimal(a.price)
-            const decB = toDecimal(b.price)
-            if (!decA || !decB) continue
-            const total = (1 / decA) + (1 / decB)
-            const pct = (1 - total) * 100
-            if (pct < 0.1 || pct > 8) continue
+      for (const a of sidePrices) {
+        for (const b of opposingPrices) {
+          if (a.bk === b.bk) continue
+          const decA = toDecimal(a.price)
+          const decB = toDecimal(b.price)
+          if (!decA || !decB) continue
+          const total = (1 / decA) + (1 / decB)
+          const pct = (1 - total) * 100
+          if (pct < 0.1 || pct > 8) continue
 
-            const stakeA = Math.round((1 / decA) / total * 100)
-            const stakeB = Math.round((1 / decB) / total * 100)
+          const stakeA = Math.round((1 / decA) / total * 100)
+          const stakeB = Math.round((1 / decB) / total * 100)
+          const marketName = oddData.marketName || oddID
 
-            let betA, betB
-            if (sideA === 'home') {
-              betA = `${homeTeam} on ${a.bk}`
-              betB = `${awayTeam} on ${b.bk}`
-            } else if (sideA === 'over') {
-              betA = `Over on ${a.bk}`
-              betB = `Under on ${b.bk}`
-            } else {
-              betA = `Yes on ${a.bk}`
-              betB = `No on ${b.bk}`
-            }
-
-            arbs.push({
-              game: gameName, sport, time,
-              bA: a.bk, oA: a.price > 0 ? `+${a.price}` : `${a.price}`, betA,
-              bB: b.bk, oB: b.price > 0 ? `+${b.price}` : `${b.price}`, betB,
-              profit: parseFloat(pct.toFixed(2)),
-              sA: stakeA, sB: stakeB,
-              market: a.marketName,
-            })
+          let betA, betB
+          if (sideID === 'home') {
+            betA = `Bet ${homeTeam}`
+            betB = `Bet ${awayTeam}`
+          } else if (sideID === 'over') {
+            betA = `Bet Over`
+            betB = `Bet Under`
+          } else {
+            betA = `Bet ${sideID}`
+            betB = `Bet ${opposingSideID}`
           }
+
+          arbs.push({
+            game: gameName, sport, time,
+            bA: a.bk, oA: a.price > 0 ? `+${a.price}` : `${a.price}`, betA,
+            bB: b.bk, oB: b.price > 0 ? `+${b.price}` : `${b.price}`, betB,
+            profit: parseFloat(pct.toFixed(2)),
+            sA: stakeA, sB: stakeB,
+            market: marketName,
+          })
         }
       }
     }
   }
-
   return arbs.sort((a, b) => b.profit - a.profit)
 }
 
