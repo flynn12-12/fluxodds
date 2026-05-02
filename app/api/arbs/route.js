@@ -110,13 +110,13 @@ export const maxDuration = 30
 export async function GET() {
   try {
     const res = await fetch(
-      `https://api.sportsgameodds.com/v2/events?apiKey=${API_KEY}&leagueID=MLB,NBA,NHL,NFL&oddsAvailable=true&limit=20`,
+      `https://api.sportsgameodds.com/v2/events?apiKey=${API_KEY}&leagueID=MLB,NBA,NHL,NFL&oddsAvailable=true&limit=50`,
       { cache: 'no-store' }
     )
     const data = await res.json()
     const events = data.data || []
     const arbs = findArbs(events)
-    return Response.json({ arbs, total: arbs.length, eventCount: events.length })
+    return Response.json({ arbs: arbs.slice(0, 60), total: arbs.slice(0, 60).length, eventCount: events.length })
   } catch (e) {
     return Response.json({ arbs: [], error: e.message })
   }

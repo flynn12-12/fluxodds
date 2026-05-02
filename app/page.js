@@ -98,7 +98,7 @@ export default function Home() {
       }
     }
     fetchArbs()
-    const interval = setInterval(fetchArbs, 30000)
+    const interval = setInterval(fetchArbs, 5000)
     return () => clearInterval(interval)
   }, [])
  
