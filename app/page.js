@@ -28,9 +28,7 @@ const fmtTime = (iso) => {
   } catch { return iso }
 }
 
-// Live age helpers — `tick` argument is a counter that changes every second so
-// React re-renders even though the underlying firstSeenAt didn't change.
-const liveAgeSeconds = (firstSeenAt, _tick) => {
+const liveAgeSeconds = (firstSeenAt) => {
   if (!firstSeenAt) return null
   const ms = Date.now() - new Date(firstSeenAt).getTime()
   return Math.max(0, Math.floor(ms / 1000))
@@ -44,6 +42,7 @@ const fmtAge = (sec) => {
 }
 
 const FREE_PROFIT_CAP = 2
+const FREE_EV_CAP = 1.5
 
 export default function Home() {
   const [view, setView] = useState('marketing')
@@ -65,6 +64,9 @@ export default function Home() {
   const [userPlan, setUserPlan] = useState(null)
   const [user, setUser] = useState(null)
   const [liveData, setLiveData] = useState([])
+  const [evData, setEvData] = useState([])
+
+  const isEvView = toolName === 'Positive EV Bets'
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -73,9 +75,7 @@ export default function Home() {
         const { data: profile } = await supabase
           .from('profiles').select('plan').eq('user_id', session.user.id).single()
         setUserPlan(profile?.plan || 'free')
-      } else {
-        setUserPlan('free')
-      }
+      } else { setUserPlan('free') }
     })
     supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user || null)
@@ -83,40 +83,46 @@ export default function Home() {
         const { data: profile } = await supabase
           .from('profiles').select('plan').eq('user_id', session.user.id).single()
         setUserPlan(profile?.plan || 'free')
-      } else {
-        setUserPlan('free')
-      }
+      } else { setUserPlan('free') }
     })
   }, [])
 
-  // 1-second ticker — drives both the "last scan" indicator AND the live age timer
   useEffect(() => {
     const t = setInterval(() => setSecs(s => s + 1), 1000)
     return () => clearInterval(t)
   }, [])
 
-  // Polling /api/arbs every 1 second
+  // Poll arbs
   useEffect(() => {
     let cancelled = false
     const fetchArbs = async () => {
       try {
         const res = await fetch('/api/arbs', { cache: 'no-store' })
         const data = await res.json()
-        if (!cancelled) {
-          setLiveData(data.arbs || [])
-        }
-      } catch (e) {
-        console.error('Failed to fetch arbs:', e)
-      }
+        if (!cancelled) setLiveData(data.arbs || [])
+      } catch (e) { console.error('arbs fetch:', e) }
     }
     fetchArbs()
     const interval = setInterval(fetchArbs, 1000)
     return () => { cancelled = true; clearInterval(interval) }
   }, [])
 
-  const displayData = liveData
+  // Poll EV bets
+  useEffect(() => {
+    let cancelled = false
+    const fetchEv = async () => {
+      try {
+        const res = await fetch('/api/ev', { cache: 'no-store' })
+        const data = await res.json()
+        if (!cancelled) setEvData(data.evBets || [])
+      } catch (e) { console.error('ev fetch:', e) }
+    }
+    fetchEv()
+    const interval = setInterval(fetchEv, 2000) // 2s — EV moves slower than arbs
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [])
 
-  const filtered = displayData.filter(a => {
+  const filteredArbs = liveData.filter(a => {
     if (sport !== 'all' && a.sport !== sport) return false
     if (a.profit < minP) return false
     if (query && !a.game.toLowerCase().includes(query)
@@ -125,8 +131,18 @@ export default function Home() {
     return true
   })
 
+  const filteredEv = evData.filter(e => {
+    if (sport !== 'all' && e.sport !== sport) return false
+    if (e.ev < minP) return false
+    if (query && !e.game.toLowerCase().includes(query)
+      && !(e.bookmaker || '').toLowerCase().includes(query)
+      && !(e.bet || '').toLowerCase().includes(query)) return false
+    return true
+  })
+
   const isPro = userPlan === 'pro'
-  const shouldBlur = (a) => userPlan === 'free' && a.profit > FREE_PROFIT_CAP
+  const shouldBlurArb = (a) => userPlan === 'free' && a.profit > FREE_PROFIT_CAP
+  const shouldBlurEv = (e) => userPlan === 'free' && e.ev > FREE_EV_CAP
 
   const openTool = (name) => {
     if (!user) { setLoginOpen(true); return }
@@ -172,8 +188,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           priceId: 'price_1TSNXCHCUgRq1HVGov0nnMQc',
-          email: user?.email || '',
-          userId: user?.id || '',
+          email: user?.email || '', userId: user?.id || '',
         })
       })
       const { url } = await res.json()
@@ -189,6 +204,7 @@ export default function Home() {
   const faqs = [
     {q:'Is arbitrage betting legal?', a:"Yes — arbitrage betting is completely legal. You're simply placing bets at different sportsbooks to guarantee profit from odds discrepancies. FluxOdds is a data and analysis tool only."},
     {q:'How is profit actually guaranteed?', a:"When sportsbooks disagree on odds, the math can create a situation where betting on every outcome still results in profit. FluxOdds finds these windows and calculates exact stakes."},
+    {q:"What's the difference between arbs and +EV?", a:"Arbitrage = guaranteed profit on every bet (smaller, more frequent wins). +EV = bets where the math says you'll profit long-term even if individual bets can lose. We use Pinnacle's de-vigged sharp lines as the fair value reference."},
     {q:'How fast are the arbs detected?', a:'Our engine scans odds continuously. Most arbs appear within 1 second. Pro and Sharp subscribers get priority queue access — crucial since many arbs disappear within minutes.'},
     {q:'Do I need a lot of money to start?', a:'Not at all. You can start with as little as $50 across two books. Our calculator scales to any bankroll. Most users start small, verify the system, then scale up.'},
     {q:'Which sportsbooks do you cover?', a:'40+ sportsbooks including DraftKings, FanDuel, BetMGM, Caesars, PointsBet, BetRivers, Unibet, and many more. We continuously add new books.'},
@@ -198,7 +214,7 @@ export default function Home() {
   const tools = [
     {id:'live', icon:'⚡', name:'Live Arbitrage', desc:'Real-time arbs as they appear', badge:'LIVE'},
     {id:'prematch', icon:'🗓', name:'Prematch Arbitrage', desc:'Plan ahead, less time pressure'},
-    {id:'ev', icon:'📈', name:'Positive EV Bets', desc:'Long-term mathematical edge', badge:'HOT'},
+    {id:'ev', icon:'📈', name:'Positive EV Bets', desc:'Long-term mathematical edge', badge:'NEW'},
     {id:'middles', icon:'🎯', name:'Middles Finder', desc:'Win both sides on line moves'},
     {id:'freebets', icon:'🎁', name:'Free Bet Converter', desc:'Turn promos into real cash', badge:'PRO'},
     {id:'calculator', icon:'🧮', name:'Bet Calculator', desc:'Perfect stakes, any bankroll'},
@@ -209,10 +225,9 @@ export default function Home() {
   const stakeA = selectedArb ? ((bankroll * selectedArb.sA) / 100).toFixed(2) : 0
   const stakeB = selectedArb ? ((bankroll * selectedArb.sB) / 100).toFixed(2) : 0
 
-  // Live age display for the row — colored badge that ticks every second
   const renderRowAge = (a) => {
     if (!a.firstSeenAt) return null
-    const ageSec = liveAgeSeconds(a.firstSeenAt, secs)
+    const ageSec = liveAgeSeconds(a.firstSeenAt)
     if (ageSec == null) return null
     if (ageSec < 30) {
       return (
@@ -222,31 +237,13 @@ export default function Home() {
         </div>
       )
     }
-    return (
-      <div className="text-[10px] text-[#5a6a78] font-medium mt-[3px] tabular-nums">{fmtAge(ageSec)}</div>
-    )
+    const _tick = secs
+    return <div className="text-[10px] text-[#5a6a78] font-medium mt-[3px] tabular-nums">{fmtAge(ageSec)}</div>
   }
 
-  // Live age display for the bet slip — bigger, color-coded by freshness
-  const renderSlipAge = (a) => {
-    if (!a?.firstSeenAt) return null
-    const ageSec = liveAgeSeconds(a.firstSeenAt, secs)
-    if (ageSec == null) return null
-    const color = ageSec < 60 ? 'text-emerald-400'
-                : ageSec < 300 ? 'text-[#ff6b1a]'
-                : 'text-[#5a6a78]'
-    return (
-      <div className="mt-2 flex items-center justify-center gap-2">
-        <span className={`w-[6px] h-[6px] rounded-full ${ageSec < 60 ? 'bg-emerald-400' : 'bg-[#5a6a78]'} animate-pulse inline-block`}></span>
-        <span className={`text-[12px] font-bold tabular-nums ${color}`}>
-          {ageSec < 30 ? 'Just appeared' : `Live for ${fmtAge(ageSec)}`}
-        </span>
-      </div>
-    )
-  }
-
+  // ─── ARB ROW RENDERER ───
   const renderArbRow = (a, i) => {
-    const blurred = shouldBlur(a)
+    const blurred = shouldBlurArb(a)
     return (
       <div key={a.fingerprint || i}
         onClick={() => !blurred ? setSelectedArb(a) : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))}
@@ -285,12 +282,50 @@ export default function Home() {
     )
   }
 
-  // Use the same ticker that's already running for "last scan" — but reset it whenever new data arrives
-  // (We just show the seconds since component mount — close enough for "data freshness" feel.)
-  const scanTime = secs % 60 === 0 ? 'just now' : `${secs % 5}s ago`
+  // ─── EV ROW RENDERER ───
+  const renderEvRow = (e, i) => {
+    const blurred = shouldBlurEv(e)
+    return (
+      <div key={e.fingerprint || i}
+        onClick={() => !blurred ? null : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))}
+        className={`grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors ${blurred ? 'cursor-pointer hover:bg-orange-900/5' : 'hover:bg-[#0f0e0b]'}`}
+        style={{gridTemplateColumns:'1.6fr 1.8fr 1fr 80px 80px 80px'}}>
+        <div>
+          <div className="text-[13px] font-semibold mb-[4px]">{e.game}</div>
+          <div className="flex items-center gap-[6px] flex-wrap">
+            <span className={SPORT_TAG}>{(e.sport || '').toUpperCase()}</span>
+            {e.market && <span className={MARKET_TAG}>{e.market}</span>}
+            <span className="text-[11px] text-[#5a6a78] font-medium">{fmtTime(e.time)}</span>
+          </div>
+        </div>
+        <div className={blurred ? 'relative' : ''}>
+          <div className={`text-[13px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{e.bet}</div>
+          <div className={`text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{e.bookmaker}</div>
+        </div>
+        <div className={blurred ? 'blur-sm select-none' : ''}>
+          <div className="text-[14px] font-bold text-[#ff6b1a]">{e.odds}</div>
+          <div className="text-[10px] text-[#5a6a78] font-medium mt-[1px]">Fair: {e.fairOdds}</div>
+        </div>
+        <div className="text-[18px] font-black text-emerald-400">+{e.ev}%</div>
+        <div className="text-[12px] text-[#7a8a96] font-medium">{e.winProb}%</div>
+        {blurred ? (
+          <div className="flex items-center justify-end">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#ff6b1a] bg-orange-900/10 border border-orange-800/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
+          </div>
+        ) : (
+          renderRowAge(e)
+        )}
+      </div>
+    )
+  }
 
   // ─── DASHBOARD ───────────────────────────────────────────────────────────────
-  if (view === 'dashboard') return (
+  if (view === 'dashboard') {
+    const filtered = isEvView ? filteredEv : filteredArbs
+    const minLabel = isEvView ? 'Min EV' : 'Min profit'
+    const sortLabel = isEvView ? '+EV' : 'Highest profit first'
+
+    return (
     <div style={{fontFamily:"'Inter',sans-serif"}} className="flex flex-col h-screen bg-[#080806] text-[#eef1f5] overflow-hidden">
       <div className="h-[52px] flex-shrink-0 flex items-center justify-between px-5 bg-[#0f0e0b] border-b border-[#1e1c16]">
         <div className="flex items-center gap-3">
@@ -308,12 +343,12 @@ export default function Home() {
         <div className="flex items-center gap-5">
           <div className="text-right">
             <div className="text-[15px] font-bold text-emerald-400">{filtered.length}</div>
-            <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">Arbs today</div>
+            <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">{isEvView ? 'EV bets' : 'Arbs today'}</div>
           </div>
           <div className="w-px h-7 bg-[#1e1c16]"></div>
           <div className="text-right">
-            <div className="text-[15px] font-bold text-[#ff6b1a]">+{filtered[0]?.profit || 0}%</div>
-            <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">Best profit</div>
+            <div className="text-[15px] font-bold text-[#ff6b1a]">+{(isEvView ? (filtered[0]?.ev || 0) : (filtered[0]?.profit || 0))}%</div>
+            <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">{isEvView ? 'Best EV' : 'Best profit'}</div>
           </div>
           <div className="w-px h-7 bg-[#1e1c16]"></div>
           <button onClick={() => setView('marketing')} className="border border-[#1e1c16] text-[#5a6a78] px-3 py-[5px] rounded-md text-[12px] font-medium hover:text-[#eef1f5] hover:border-[#2a2820] transition-all bg-transparent cursor-pointer">← Back to site</button>
@@ -330,7 +365,7 @@ export default function Home() {
               {[
                 {name:'Live Arbitrage',icon:'⚡',badge:'LIVE'},
                 {name:'Prematch Arbitrage',icon:'🗓'},
-                {name:'Positive EV Bets',icon:'📈',badge:'HOT'},
+                {name:'Positive EV Bets',icon:'📈',badge:'NEW'},
                 {name:'Middles Finder',icon:'🎯'},
                 {name:'Free Bet Converter',icon:'🎁',badge:'PRO'},
               ].map(t => (
@@ -380,11 +415,11 @@ export default function Home() {
                   FIND THE <span className="text-[#ff6b1a]">EDGE.</span><br/>
                   <span className="text-[#2a2820]">BEAT THE BOOKS.</span>
                 </h2>
-                <p className="text-[14px] text-[#5a6a78] max-w-[380px] mx-auto mb-8 leading-relaxed font-medium">Real-time arbitrage detection across every major sportsbook. Guaranteed profit, zero guesswork.</p>
+                <p className="text-[14px] text-[#5a6a78] max-w-[380px] mx-auto mb-8 leading-relaxed font-medium">Real-time arbitrage and +EV detection across every major sportsbook.</p>
                 <div className="grid grid-cols-3 gap-2 max-w-[540px] mx-auto mb-7">
                   {tools.map(t => (
                     <div key={t.id} onClick={() => openTool(t.name)}
-                      className={`bg-[#0f0e0b] border rounded-xl p-3 cursor-pointer text-left transition-all hover:-translate-y-[2px] relative overflow-hidden ${t.id==='live'?'border-orange-800/25 bg-orange-900/5':'border-[#1e1c16] hover:border-[#2a2820] hover:bg-[#1a1812]'}`}>
+                      className={`bg-[#0f0e0b] border rounded-xl p-3 cursor-pointer text-left transition-all hover:-translate-y-[2px] relative overflow-hidden ${t.id==='live'||t.id==='ev'?'border-orange-800/25 bg-orange-900/5':'border-[#1e1c16] hover:border-[#2a2820] hover:bg-[#1a1812]'}`}>
                       <div className="text-[18px] mb-2">{t.icon}</div>
                       <div className="text-[12px] font-bold text-[#eef1f5] mb-[3px]">{t.name}</div>
                       <div className="text-[11px] text-[#5a6a78] leading-snug font-medium">{t.desc}</div>
@@ -438,30 +473,47 @@ export default function Home() {
                 </div>
                 {userPlan === 'free' && (
                   <div className="mt-3 bg-orange-900/5 border border-orange-800/15 rounded-md px-3 py-[6px] flex items-center justify-between">
-                    <span className="text-[12px] text-[#5a6a78] font-medium">Free plan: arbs above {FREE_PROFIT_CAP}% are locked. <span className="text-[#ff6b1a] font-semibold">Upgrade to see them.</span></span>
+                    <span className="text-[12px] text-[#5a6a78] font-medium">Free plan: {isEvView ? `EV bets above ${FREE_EV_CAP}%` : `arbs above ${FREE_PROFIT_CAP}%`} are locked. <span className="text-[#ff6b1a] font-semibold">Upgrade to see them.</span></span>
                     <button onClick={handleCheckout} className="text-[11px] font-black bg-[#ff6b1a] text-black px-3 py-[5px] rounded-md cursor-pointer border-none hover:bg-[#ff8c42]">Get Pro</button>
                   </div>
                 )}
               </div>
 
               <div className="flex-1 overflow-y-auto">
-                <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 90px 100px'}}>
-                  <span>Game</span><span>Bet A</span><span>Bet B</span><span>Profit / Age</span><span>Stakes ($100)</span>
-                </div>
-                {filtered.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-64 text-[#5a6a78]">
-                    <div className="text-3xl opacity-30 mb-3">◎</div>
-                    <div className="text-[15px] font-bold text-[#eef1f5]">No arbitrage opportunities right now</div>
-                    <div className="text-[12px] mt-1">Scanning every 5 seconds — check back soon</div>
-                  </div>
-                ) : filtered.map((a, i) => renderArbRow(a, i))}
+                {isEvView ? (
+                  <>
+                    <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.6fr 1.8fr 1fr 80px 80px 80px'}}>
+                      <span>Game</span><span>Bet / Book</span><span>Odds / Fair</span><span>EV %</span><span>Win %</span><span>Age</span>
+                    </div>
+                    {filtered.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-64 text-[#5a6a78]">
+                        <div className="text-3xl opacity-30 mb-3">📈</div>
+                        <div className="text-[15px] font-bold text-[#eef1f5]">No +EV bets right now</div>
+                        <div className="text-[12px] mt-1 max-w-[300px] text-center">Comparing every book against Pinnacle's de-vigged sharp lines — check back soon</div>
+                      </div>
+                    ) : filtered.map((e, i) => renderEvRow(e, i))}
+                  </>
+                ) : (
+                  <>
+                    <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 90px 100px'}}>
+                      <span>Game</span><span>Bet A</span><span>Bet B</span><span>Profit / Age</span><span>Stakes ($100)</span>
+                    </div>
+                    {filtered.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-64 text-[#5a6a78]">
+                        <div className="text-3xl opacity-30 mb-3">◎</div>
+                        <div className="text-[15px] font-bold text-[#eef1f5]">No arbitrage opportunities right now</div>
+                        <div className="text-[12px] mt-1">Scanning every 5 seconds — check back soon</div>
+                      </div>
+                    ) : filtered.map((a, i) => renderArbRow(a, i))}
+                  </>
+                )}
               </div>
 
               <div className="h-[26px] flex-shrink-0 flex items-center gap-4 px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[11px] text-[#5a6a78] font-medium">
                 <span><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected · 40 books</span>
                 <span className="text-[#1e1c16]">|</span>
-                <span>Polling every 1s</span>
-                <span className="ml-auto">{toolName} · Highest profit first</span>
+                {isEvView ? <span>Fair line: Pinnacle (de-vigged)</span> : <span>Polling every 1s</span>}
+                <span className="ml-auto">{toolName} · {sortLabel}</span>
               </div>
             </div>
           )}
@@ -487,7 +539,6 @@ export default function Home() {
               <div className="text-center p-5 bg-orange-900/5 border border-orange-800/10 rounded-xl mb-4">
                 <div className="text-[48px] font-black text-[#ff6b1a] leading-none">+{selectedArb.profit}%</div>
                 <div className="text-[10px] text-[#5a6a78] mt-1 uppercase tracking-wider font-medium">Guaranteed profit</div>
-                {renderSlipAge(selectedArb)}
               </div>
               <div className="flex items-center gap-2 mb-4">
                 <label className="text-[12px] text-[#5a6a78] font-medium whitespace-nowrap">Bankroll $</label>
@@ -529,7 +580,8 @@ export default function Home() {
       )}
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');`}</style>
     </div>
-  )
+    )
+  }
 
   // ─── MARKETING SITE ──────────────────────────────────────────────────────────
   return (
@@ -545,7 +597,7 @@ export default function Home() {
           {[
             {name:'Live Arbitrage',icon:'⚡',badge:'LIVE'},
             {name:'Prematch Arbitrage',icon:'🗓'},
-            {name:'Positive EV Bets',icon:'📈',badge:'HOT'},
+            {name:'Positive EV Bets',icon:'📈',badge:'NEW'},
             {name:'Middles Finder',icon:'🎯'},
             {name:'Free Bet Converter',icon:'🎁',badge:'PRO'},
           ].map(t => (
@@ -613,14 +665,14 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 right-0 h-[280px] pointer-events-none" style={{background:'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(255,107,26,.18) 0%, rgba(255,80,0,.08) 40%, transparent 70%)'}}></div>
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 bg-orange-900/10 border border-orange-800/20 text-[#ff6b1a] px-4 py-[5px] rounded-full text-[11px] font-semibold tracking-wider uppercase mb-7">
-            <span className="w-[6px] h-[6px] rounded-full bg-emerald-400 animate-pulse inline-block"></span>Live arb detection — 40+ sportsbooks
+            <span className="w-[6px] h-[6px] rounded-full bg-emerald-400 animate-pulse inline-block"></span>Live arbs + EV — 40+ sportsbooks
           </div>
           <h1 className="font-black leading-[.95] tracking-tight mb-2" style={{fontSize:'clamp(48px,7vw,100px)'}}>
             FIND THE <span className="text-[#ff6b1a]">EDGE.</span><br/>
             <span className="text-[#2a2820]">BEAT THE BOOKS.</span>
           </h1>
           <p className="text-[#5a6a78] font-medium max-w-[500px] mx-auto mt-5 mb-11 leading-relaxed" style={{fontSize:'clamp(15px,1.6vw,18px)'}}>
-            FluxOdds scans every major sportsbook in real time and surfaces arbitrage opportunities before they disappear. Guaranteed profit. Zero guesswork.
+            FluxOdds scans every major sportsbook in real time and surfaces arbitrage and +EV opportunities before they disappear. Guaranteed math. Sharp lines from Pinnacle.
           </p>
           <div className="flex items-center gap-3 justify-center">
             <button onClick={launchDash} className="px-9 py-4 rounded-xl bg-[#ff6b1a] text-black text-[15px] font-black hover:bg-[#ff8c42] transition-all hover:-translate-y-[2px] border-none cursor-pointer">Launch FluxOdds →</button>
@@ -658,8 +710,8 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 mt-14 border border-[#1e1c16] rounded-xl overflow-hidden" style={{gap:'2px'}}>
           {[
             {n:'01',t:'We scan the books',d:'FluxOdds monitors DraftKings, FanDuel, BetMGM, Caesars, and 40+ more — refreshing odds every second across all major sports.'},
-            {n:'02',t:'We find the arb',d:'Our engine calculates implied probability across every outcome. When the math guarantees profit, we surface it instantly with exact bet amounts.'},
-            {n:'03',t:'You place the bets',d:'Get alerted in real time via email or push. Place your stakes at each sportsbook and lock in guaranteed profit regardless of the outcome.'},
+            {n:'02',t:'We find the edge',d:'Our engine calculates arbitrage opportunities AND positive EV bets using Pinnacle de-vigged sharp lines as the reference.'},
+            {n:'03',t:'You place the bets',d:'Get alerted in real time. Place stakes at each sportsbook and lock in guaranteed profit, or build long-term EV with sharp value bets.'},
           ].map((s,i) => (
             <div key={i} className="p-9 bg-[#080806] hover:bg-[#0f0e0b] transition-colors group">
               <div className="text-[60px] font-black text-[#2a2820] group-hover:text-[#ff6b1a] leading-none mb-5 transition-colors">{s.n}</div>
@@ -677,9 +729,9 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 mt-14 border border-[#1e1c16] rounded-xl overflow-hidden" style={{gap:'1px',background:'#1e1c16'}}>
           {[
             {icon:'⚡',t:'Live arb finder',d:'Real-time scanning across 40+ books. Arbs are surfaced the moment they appear — with profit %, exact stakes, and direct links to each book.'},
-            {icon:'🔔',t:'Instant alerts',d:'Set a minimum profit threshold and get notified via email or push the instant an arb hits your criteria. Never miss a window again.'},
+            {icon:'📈',t:'+EV bet finder',d:'Pinnacle de-vigged sharp lines as the reference. Find positive expected value bets where the math is in your favor — the strategy the pros use daily.'},
+            {icon:'🔔',t:'Instant alerts',d:'Set a minimum profit/EV threshold and get notified via email or push the instant a bet hits your criteria. Never miss a window again.'},
             {icon:'🧮',t:'Bet size calculator',d:'Enter your bankroll and FluxOdds tells you exactly how much to place on each side to guarantee the same profit no matter what.'},
-            {icon:'📈',t:'+EV bet finder',d:'Beyond arbs — find positive expected value bets where the odds are in your favor long-term. The strategy the pros use daily.'},
             {icon:'🎯',t:'Middles finder',d:'Spot middle opportunities where line movement creates a chance to win both sides. Higher risk, massive upside when they hit.'},
             {icon:'📊',t:'P&L tracker',d:'Log every bet and track your running profit across books, sports, and time periods. Know your edge. Grow your bankroll.'},
           ].map((f,i) => (
@@ -699,10 +751,10 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-14">
           {[
             {name:'Free',price:'0',desc:'Discover FluxOdds and start finding arbs at no cost.',btn:'Get started free',btnStyle:'border border-[#1e1c16] text-[#eef1f5] hover:border-[#ff6b1a] hover:text-[#ff6b1a]',featured:false,
-              feats:['Unlimited arbs capped at 2%','All sports access','10 sportsbooks scanned','Basic bet calculator','Priority support','Early feature access'],
-              off:['No instant alerts','No +EV bets','No P&L tracker']},
+              feats:['Unlimited arbs capped at 2%','+EV bets capped at 1.5%','All sports access','Basic bet calculator','Priority support'],
+              off:['No instant alerts','No middles finder','No P&L tracker']},
             {name:'Pro',price:'75',desc:'Full access for serious arbers ready to build real profit.',btn:'Try Pro Free For 3 Days',btnStyle:'bg-[#ff6b1a] text-black hover:bg-[#ff8c42]',featured:true,badge:'Most popular',
-              feats:['Unlimited arbs','All sports covered','40+ sportsbooks','Instant alerts','Full +EV bet finder','Middles finder','Full P&L tracker','3 device limit','Cancel anytime'],off:[]},
+              feats:['Unlimited arbs','Unlimited +EV bets','All sports covered','40+ sportsbooks','Instant alerts','Middles finder','Full P&L tracker','3 device limit','Cancel anytime'],off:[]},
             {name:'Pro Day Pass',price:'15',desc:'All Pro features for 24 hours. Perfect for occasional arbers.',btn:'Coming Soon',btnStyle:'border border-[#1e1c16] text-[#5a6a78]',featured:false,badge:'Coming soon',
               feats:['All Pro features','24 hour access','One-time purchase','No subscription needed'],off:[]},
           ].map((p,i) => (
