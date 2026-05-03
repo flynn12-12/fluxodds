@@ -2,8 +2,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
 
-const DATA = []
-
 const TICKS = [
   {game:'PSG vs Bayern',sport:'Soccer',profit:'+5.1%',books:'Unibet / DraftKings'},
   {game:'Man City vs Arsenal',sport:'Soccer',profit:'+4.7%',books:'FanDuel / Unibet'},
@@ -16,25 +14,36 @@ const TICKS = [
 const SPORT_TAG = 'bg-[#1e1c16] text-[#7a8a96] border border-[#2a2820] text-[9px] font-semibold px-[6px] py-[1px] rounded'
 const MARKET_TAG = 'bg-orange-900/10 text-[#ff6b1a] border border-orange-800/20 text-[9px] font-semibold px-[6px] py-[1px] rounded'
 
-// Strip trailing " on bookmakerName" from a bet label so we can show the bet
-// and the bookmaker separately in the UI.
 const cleanBet = (betStr, bookmaker) => {
   if (!betStr) return ''
   if (!bookmaker) return betStr
   return betStr.replace(new RegExp(`\\s+on\\s+${bookmaker}$`, 'i'), '').trim()
 }
 
-// Pretty-print game start time
 const fmtTime = (iso) => {
   if (!iso) return ''
   try {
     const d = new Date(iso)
-    return d.toLocaleString(undefined, {
-      month: 'short', day: 'numeric',
-      hour: 'numeric', minute: '2-digit'
-    })
+    return d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' })
   } catch { return iso }
 }
+
+// Live age helpers — `tick` argument is a counter that changes every second so
+// React re-renders even though the underlying firstSeenAt didn't change.
+const liveAgeSeconds = (firstSeenAt, _tick) => {
+  if (!firstSeenAt) return null
+  const ms = Date.now() - new Date(firstSeenAt).getTime()
+  return Math.max(0, Math.floor(ms / 1000))
+}
+
+const fmtAge = (sec) => {
+  if (sec == null) return ''
+  if (sec < 60) return `${sec}s`
+  if (sec < 3600) return `${Math.floor(sec/60)}m ${sec%60}s`
+  return `${Math.floor(sec/3600)}h ${Math.floor((sec%3600)/60)}m`
+}
+
+const FREE_PROFIT_CAP = 2
 
 export default function Home() {
   const [view, setView] = useState('marketing')
@@ -57,16 +66,12 @@ export default function Home() {
   const [user, setUser] = useState(null)
   const [liveData, setLiveData] = useState([])
 
-  // Auth + plan loading
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
         setUser(session.user)
         const { data: profile } = await supabase
-          .from('profiles')
-          .select('plan')
-          .eq('user_id', session.user.id)
-          .single()
+          .from('profiles').select('plan').eq('user_id', session.user.id).single()
         setUserPlan(profile?.plan || 'free')
       } else {
         setUserPlan('free')
@@ -76,10 +81,7 @@ export default function Home() {
       setUser(session?.user || null)
       if (session?.user) {
         const { data: profile } = await supabase
-          .from('profiles')
-          .select('plan')
-          .eq('user_id', session.user.id)
-          .single()
+          .from('profiles').select('plan').eq('user_id', session.user.id).single()
         setUserPlan(profile?.plan || 'free')
       } else {
         setUserPlan('free')
@@ -87,13 +89,13 @@ export default function Home() {
     })
   }, [])
 
-  // Timer (resets each scan, used for "last scan" display)
+  // 1-second ticker — drives both the "last scan" indicator AND the live age timer
   useEffect(() => {
     const t = setInterval(() => setSecs(s => s + 1), 1000)
     return () => clearInterval(t)
   }, [])
 
-  // Live arb fetching — polls every 1 second for real-time updates
+  // Polling /api/arbs every 1 second
   useEffect(() => {
     let cancelled = false
     const fetchArbs = async () => {
@@ -102,7 +104,6 @@ export default function Home() {
         const data = await res.json()
         if (!cancelled) {
           setLiveData(data.arbs || [])
-          setSecs(0)
         }
       } catch (e) {
         console.error('Failed to fetch arbs:', e)
@@ -110,13 +111,8 @@ export default function Home() {
     }
     fetchArbs()
     const interval = setInterval(fetchArbs, 1000)
-    return () => {
-      cancelled = true
-      clearInterval(interval)
-    }
+    return () => { cancelled = true; clearInterval(interval) }
   }, [])
-
-  const scanTime = secs < 60 ? `${secs}s ago` : `${Math.floor(secs/60)}m ago`
 
   const displayData = liveData
 
@@ -129,21 +125,16 @@ export default function Home() {
     return true
   })
 
-  // Only blur if we KNOW user is free (not null/loading)
-  const shouldBlur = (a) => userPlan === 'free' && a.profit > 2
+  const isPro = userPlan === 'pro'
+  const shouldBlur = (a) => userPlan === 'free' && a.profit > FREE_PROFIT_CAP
 
   const openTool = (name) => {
     if (!user) { setLoginOpen(true); return }
-    setToolName(name)
-    setDashView('arb')
-    setView('dashboard')
-    setSidebarOpen(false)
+    setToolName(name); setDashView('arb'); setView('dashboard'); setSidebarOpen(false)
   }
-
   const launchDash = () => {
     if (!user) { setLoginOpen(true); return }
-    setView('dashboard')
-    setDashView('home')
+    setView('dashboard'); setDashView('home')
   }
 
   const handleSignup = async () => {
@@ -157,14 +148,9 @@ export default function Home() {
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email: signupEmail, password: signupPassword })
         if (error) throw error
-        setUser(data.user)
-        setLoginOpen(false)
-        setView('dashboard')
-        setDashView('home')
+        setUser(data.user); setLoginOpen(false); setView('dashboard'); setDashView('home')
       }
-    } catch (e) {
-      alert(e.message)
-    }
+    } catch (e) { alert(e.message) }
   }
 
   const handleForgotPassword = async () => {
@@ -176,9 +162,7 @@ export default function Home() {
       if (error) throw error
       alert('Password reset email sent! Check your inbox.')
       setLoginOpen(false)
-    } catch (e) {
-      alert(e.message)
-    }
+    } catch (e) { alert(e.message) }
   }
 
   const handleCheckout = async () => {
@@ -194,16 +178,12 @@ export default function Home() {
       })
       const { url } = await res.json()
       if (url) window.location.href = url
-    } catch (e) {
-      alert('Something went wrong. Please try again.')
-    }
+    } catch (e) { alert('Something went wrong. Please try again.') }
   }
 
   const handleSignout = async () => {
     await supabase.auth.signOut()
-    setUser(null)
-    setUserPlan('free')
-    setView('marketing')
+    setUser(null); setUserPlan('free'); setView('marketing')
   }
 
   const faqs = [
@@ -229,6 +209,86 @@ export default function Home() {
   const stakeA = selectedArb ? ((bankroll * selectedArb.sA) / 100).toFixed(2) : 0
   const stakeB = selectedArb ? ((bankroll * selectedArb.sB) / 100).toFixed(2) : 0
 
+  // Live age display for the row — colored badge that ticks every second
+  const renderRowAge = (a) => {
+    if (!a.firstSeenAt) return null
+    const ageSec = liveAgeSeconds(a.firstSeenAt, secs)
+    if (ageSec == null) return null
+    if (ageSec < 30) {
+      return (
+        <div className="flex items-center gap-1 mt-[3px]">
+          <span className="w-[5px] h-[5px] rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+          <span className="text-[10px] font-bold text-emerald-400">NEW</span>
+        </div>
+      )
+    }
+    return (
+      <div className="text-[10px] text-[#5a6a78] font-medium mt-[3px] tabular-nums">{fmtAge(ageSec)}</div>
+    )
+  }
+
+  // Live age display for the bet slip — bigger, color-coded by freshness
+  const renderSlipAge = (a) => {
+    if (!a?.firstSeenAt) return null
+    const ageSec = liveAgeSeconds(a.firstSeenAt, secs)
+    if (ageSec == null) return null
+    const color = ageSec < 60 ? 'text-emerald-400'
+                : ageSec < 300 ? 'text-[#ff6b1a]'
+                : 'text-[#5a6a78]'
+    return (
+      <div className="mt-2 flex items-center justify-center gap-2">
+        <span className={`w-[6px] h-[6px] rounded-full ${ageSec < 60 ? 'bg-emerald-400' : 'bg-[#5a6a78]'} animate-pulse inline-block`}></span>
+        <span className={`text-[12px] font-bold tabular-nums ${color}`}>
+          {ageSec < 30 ? 'Just appeared' : `Live for ${fmtAge(ageSec)}`}
+        </span>
+      </div>
+    )
+  }
+
+  const renderArbRow = (a, i) => {
+    const blurred = shouldBlur(a)
+    return (
+      <div key={a.fingerprint || i}
+        onClick={() => !blurred ? setSelectedArb(a) : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))}
+        className={`grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors ${blurred ? 'cursor-pointer hover:bg-orange-900/5' : 'cursor-pointer hover:bg-[#0f0e0b]'}`}
+        style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 90px 100px'}}>
+        <div>
+          <div className="text-[13px] font-semibold mb-[4px]">{a.game}</div>
+          <div className="flex items-center gap-[6px] flex-wrap">
+            <span className={SPORT_TAG}>{(a.sport || '').toUpperCase()}</span>
+            {a.market && <span className={MARKET_TAG}>{a.market}</span>}
+            <span className="text-[11px] text-[#5a6a78] font-medium">{fmtTime(a.time)}</span>
+          </div>
+        </div>
+        <div className={blurred ? 'relative' : ''}>
+          <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bA}</div>
+          <div className={`text-[13px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betA, a.bA)}</div>
+          <div className={`text-[12px] text-[#ff6b1a] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oA}</div>
+        </div>
+        <div className={blurred ? 'relative' : ''}>
+          <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bB}</div>
+          <div className={`text-[13px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betB, a.bB)}</div>
+          <div className={`text-[12px] text-[#ff6b1a] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oB}</div>
+        </div>
+        <div>
+          <div className="text-[18px] font-black text-[#ff6b1a] leading-none">+{a.profit}%</div>
+          {renderRowAge(a)}
+        </div>
+        {blurred ? (
+          <div className="flex items-center justify-end">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#ff6b1a] bg-orange-900/10 border border-orange-800/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
+          </div>
+        ) : (
+          <div className="text-[12px] text-[#7a8a96] font-medium">${a.sA} / ${a.sB}</div>
+        )}
+      </div>
+    )
+  }
+
+  // Use the same ticker that's already running for "last scan" — but reset it whenever new data arrives
+  // (We just show the seconds since component mount — close enough for "data freshness" feel.)
+  const scanTime = secs % 60 === 0 ? 'just now' : `${secs % 5}s ago`
+
   // ─── DASHBOARD ───────────────────────────────────────────────────────────────
   if (view === 'dashboard') return (
     <div style={{fontFamily:"'Inter',sans-serif"}} className="flex flex-col h-screen bg-[#080806] text-[#eef1f5] overflow-hidden">
@@ -243,6 +303,7 @@ export default function Home() {
           <span className="flex items-center gap-1 bg-emerald-900/10 border border-emerald-800/20 text-emerald-400 px-3 py-[3px] rounded-full text-[11px] font-semibold">
             <span className="w-[6px] h-[6px] rounded-full bg-emerald-400 animate-pulse inline-block"></span>LIVE
           </span>
+          {isPro && <span className="bg-[#ff6b1a] text-black px-2 py-[2px] rounded-full text-[10px] font-black tracking-wider">PRO</span>}
         </div>
         <div className="flex items-center gap-5">
           <div className="text-right">
@@ -294,13 +355,15 @@ export default function Home() {
                 </button>
               ))}
             </div>
-            <div className="mt-auto p-3 border-t border-[#1e1c16]">
-              <div className="bg-orange-900/5 border border-orange-800/15 rounded-xl p-3">
-                <div className="text-[13px] font-bold text-[#ff6b1a]">Upgrade to Pro</div>
-                <div className="text-[11px] text-[#5a6a78] mt-1">Unlimited arbs, all sports & alerts</div>
-                <span className="block mt-2 py-2 rounded-lg bg-[#ff6b1a] text-black text-[11px] font-black text-center">Get Pro — $49/mo</span>
+            {!isPro && (
+              <div className="mt-auto p-3 border-t border-[#1e1c16]">
+                <div className="bg-orange-900/5 border border-orange-800/15 rounded-xl p-3">
+                  <div className="text-[13px] font-bold text-[#ff6b1a]">Upgrade to Pro</div>
+                  <div className="text-[11px] text-[#5a6a78] mt-1">Unlimited arbs, all sports & alerts</div>
+                  <button onClick={handleCheckout} className="block w-full mt-2 py-2 rounded-lg bg-[#ff6b1a] text-black text-[11px] font-black text-center border-none cursor-pointer hover:bg-[#ff8c42]">Get Pro — $75/mo</button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -336,7 +399,7 @@ export default function Home() {
               <div className="absolute bottom-0 left-0 right-0 h-[25px] flex items-center gap-4 px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[11px] text-[#5a6a78] font-medium z-10">
                 <span><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected · 40 books</span>
                 <span className="text-[#1e1c16]">|</span>
-                <span>Last scan: {scanTime}</span>
+                <span>Polling every 1s</span>
                 <span className="ml-auto">FluxOdds v1.0</span>
               </div>
             </div>
@@ -373,11 +436,17 @@ export default function Home() {
                       style={{fontFamily:"'Inter',sans-serif"}}/>
                   </div>
                 </div>
+                {userPlan === 'free' && (
+                  <div className="mt-3 bg-orange-900/5 border border-orange-800/15 rounded-md px-3 py-[6px] flex items-center justify-between">
+                    <span className="text-[12px] text-[#5a6a78] font-medium">Free plan: arbs above {FREE_PROFIT_CAP}% are locked. <span className="text-[#ff6b1a] font-semibold">Upgrade to see them.</span></span>
+                    <button onClick={handleCheckout} className="text-[11px] font-black bg-[#ff6b1a] text-black px-3 py-[5px] rounded-md cursor-pointer border-none hover:bg-[#ff8c42]">Get Pro</button>
+                  </div>
+                )}
               </div>
 
               <div className="flex-1 overflow-y-auto">
-                <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 80px 100px'}}>
-                  <span>Game</span><span>Bet A</span><span>Bet B</span><span>Profit</span><span>Stakes ($100)</span>
+                <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 90px 100px'}}>
+                  <span>Game</span><span>Bet A</span><span>Bet B</span><span>Profit / Age</span><span>Stakes ($100)</span>
                 </div>
                 {filtered.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-64 text-[#5a6a78]">
@@ -385,39 +454,13 @@ export default function Home() {
                     <div className="text-[15px] font-bold text-[#eef1f5]">No arbitrage opportunities right now</div>
                     <div className="text-[12px] mt-1">Scanning every 5 seconds — check back soon</div>
                   </div>
-                ) : filtered.map((a, i) => (
-                  <div key={a.fingerprint || i} onClick={() => !shouldBlur(a) ? setSelectedArb(a) : null}
-                    className={`grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors ${shouldBlur(a) ? 'relative cursor-default select-none' : 'cursor-pointer hover:bg-[#0f0e0b]'}`}
-                    style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 80px 100px'}}>
-                    <div>
-                      <div className="text-[13px] font-semibold mb-[4px]">{a.game}</div>
-                      <div className="flex items-center gap-[6px] flex-wrap">
-                        <span className={SPORT_TAG}>{(a.sport || '').toUpperCase()}</span>
-                        {a.market && <span className={MARKET_TAG}>{a.market}</span>}
-                        <span className="text-[11px] text-[#5a6a78] font-medium">{fmtTime(a.time)}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bA}</div>
-                      <div className="text-[13px] font-semibold leading-tight">{cleanBet(a.betA, a.bA)}</div>
-                      <div className="text-[12px] text-[#ff6b1a] font-semibold mt-[2px]">{a.oA}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bB}</div>
-                      <div className="text-[13px] font-semibold leading-tight">{cleanBet(a.betB, a.bB)}</div>
-                      <div className="text-[12px] text-[#ff6b1a] font-semibold mt-[2px]">{a.oB}</div>
-                    </div>
-                    <div className="text-[18px] font-black text-[#ff6b1a]">+{a.profit}%</div>
-                    <div className="text-[12px] text-[#7a8a96] font-medium">${a.sA} / ${a.sB}</div>
-                    {shouldBlur(a) && <div className="absolute inset-0 backdrop-blur-sm bg-[#080806]/60 flex items-center justify-center"><span className="text-[12px] font-bold text-[#ff6b1a] bg-[#0f0e0b] border border-[#ff6b1a]/30 px-3 py-1 rounded-full">🔒 Pro only</span></div>}
-                  </div>
-                ))}
+                ) : filtered.map((a, i) => renderArbRow(a, i))}
               </div>
 
               <div className="h-[26px] flex-shrink-0 flex items-center gap-4 px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[11px] text-[#5a6a78] font-medium">
                 <span><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected · 40 books</span>
                 <span className="text-[#1e1c16]">|</span>
-                <span>Last scan: {scanTime}</span>
+                <span>Polling every 1s</span>
                 <span className="ml-auto">{toolName} · Highest profit first</span>
               </div>
             </div>
@@ -444,6 +487,7 @@ export default function Home() {
               <div className="text-center p-5 bg-orange-900/5 border border-orange-800/10 rounded-xl mb-4">
                 <div className="text-[48px] font-black text-[#ff6b1a] leading-none">+{selectedArb.profit}%</div>
                 <div className="text-[10px] text-[#5a6a78] mt-1 uppercase tracking-wider font-medium">Guaranteed profit</div>
+                {renderSlipAge(selectedArb)}
               </div>
               <div className="flex items-center gap-2 mb-4">
                 <label className="text-[12px] text-[#5a6a78] font-medium whitespace-nowrap">Bankroll $</label>
@@ -528,7 +572,7 @@ export default function Home() {
           <div className="bg-orange-900/5 border border-orange-800/15 rounded-xl p-3 cursor-pointer hover:bg-orange-900/10 transition-colors">
             <div className="text-[13px] font-bold text-[#ff6b1a]">Upgrade to Pro</div>
             <div className="text-[11px] text-[#5a6a78] mt-1 font-medium">Unlimited arbs, all sports & alerts</div>
-            <span className="block mt-2 py-2 rounded-lg bg-[#ff6b1a] text-black text-[11px] font-black text-center">Get Pro — $49/mo</span>
+            <span className="block mt-2 py-2 rounded-lg bg-[#ff6b1a] text-black text-[11px] font-black text-center">Get Pro — $75/mo</span>
           </div>
         </div>
       </div>
@@ -643,51 +687,6 @@ export default function Home() {
               <div className="w-[42px] h-[42px] rounded-xl bg-orange-900/10 border border-orange-800/15 flex items-center justify-center text-[18px] mb-5">{f.icon}</div>
               <h3 className="text-[17px] font-bold mb-2">{f.t}</h3>
               <p className="text-[#5a6a78] text-[13px] leading-[1.7] font-medium">{f.d}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section id="preview" className="py-[90px] px-12 bg-[#0f0e0b] border-t border-b border-[#1e1c16]">
-        <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">Live preview</div>
-        <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>THIS IS WHAT<br/>PROFIT LOOKS LIKE.</h2>
-        <p className="text-[#5a6a78] text-[17px] max-w-[500px] leading-relaxed mb-14 font-medium">Sorted by highest profit first. Every arb, every book, every stake — laid out clearly so you can act fast.</p>
-        <div className="border border-[#1e1c16] rounded-xl overflow-hidden bg-[#080806]">
-          <div className="flex items-center gap-2 px-4 py-3 bg-[#1a1812] border-b border-[#1e1c16]">
-            <div className="w-[10px] h-[10px] rounded-full bg-[#ff5f57]"></div>
-            <div className="w-[10px] h-[10px] rounded-full bg-[#febc2e]"></div>
-            <div className="w-[10px] h-[10px] rounded-full bg-[#28c840]"></div>
-            <div className="flex-1 bg-[#080806] border border-[#1e1c16] rounded px-3 py-[3px] text-[11px] text-[#5a6a78] mx-2 font-medium">app.fluxodds.com/dashboard</div>
-            <span className="w-[6px] h-[6px] rounded-full bg-emerald-400 animate-pulse ml-auto inline-block"></span>
-            <span className="text-[11px] text-[#ff6b1a] ml-1 font-semibold">LIVE</span>
-          </div>
-          <div className="grid text-[11px] font-semibold uppercase text-[#3a4a56] px-5 py-2 border-b border-[#1e1c16] tracking-wide" style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 80px 100px'}}>
-            <span>Game</span><span>Bet A</span><span>Bet B</span><span>Profit</span><span>Stakes ($100)</span>
-          </div>
-          {liveData.slice(0,5).length === 0 ? (
-            <div className="px-5 py-10 text-center text-[#5a6a78] text-[13px] font-medium">Loading live arbs…</div>
-          ) : liveData.slice(0,5).map((a,i) => (
-            <div key={a.fingerprint || i} className="grid px-5 py-[12px] border-b border-[#1e1c16] items-center hover:bg-[#0f0e0b] transition-colors cursor-pointer last:border-none" style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 80px 100px'}}>
-              <div>
-                <div className="font-semibold text-[13px] mb-[4px]">{a.game}</div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={SPORT_TAG}>{(a.sport || '').toUpperCase()}</span>
-                  {a.market && <span className={MARKET_TAG}>{a.market}</span>}
-                  <span className="text-[11px] text-[#5a6a78] font-medium">{fmtTime(a.time)}</span>
-                </div>
-              </div>
-              <div>
-                <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bA}</div>
-                <div className="text-[13px] font-semibold leading-tight">{cleanBet(a.betA, a.bA)}</div>
-                <div className="text-[12px] text-[#ff6b1a] font-semibold mt-[2px]">{a.oA}</div>
-              </div>
-              <div>
-                <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bB}</div>
-                <div className="text-[13px] font-semibold leading-tight">{cleanBet(a.betB, a.bB)}</div>
-                <div className="text-[12px] text-[#ff6b1a] font-semibold mt-[2px]">{a.oB}</div>
-              </div>
-              <div className="text-[18px] font-black text-[#ff6b1a]">+{a.profit}%</div>
-              <div className="text-[12px] text-[#7a8a96] font-medium">${a.sA} / ${a.sB}</div>
             </div>
           ))}
         </div>
