@@ -91,6 +91,7 @@ export default function Home() {
   const isEvView = toolName === 'Positive EV Bets'
   const isMiddlesView = toolName === 'Middles Finder'
   const isCalcView = toolName === 'Bet Calculator'
+  const isPnlView = toolName === 'P&L Tracker'
   const isBonusView = toolName === 'Bonus Bet Converter'
 
   const [calcTab, setCalcTab] = useState('arb')
@@ -103,6 +104,14 @@ export default function Home() {
   const [parlayStake, setParlayStake] = useState(100)
   const [holdOddsA, setHoldOddsA] = useState('')
   const [holdOddsB, setHoldOddsB] = useState('')
+
+  const [pnlBets, setPnlBets] = useState([])
+  const [pnlLoading, setPnlLoading] = useState(false)
+  const [pnlForm, setPnlForm] = useState({ game: '', bookmaker: '', betType: 'arb', odds: '', stake: '', result: 'pending', profit: '', sport: 'nba', notes: '' })
+  const [pnlFormOpen, setPnlFormOpen] = useState(false)
+  const [pnlFilter, setPnlFilter] = useState('all')
+  const [pnlSportFilter, setPnlSportFilter] = useState('all')
+  const [pnlEditId, setPnlEditId] = useState(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -187,6 +196,26 @@ export default function Home() {
     const interval = setInterval(fetchMiddles, 2000)
     return () => { cancelled = true; clearInterval(interval) }
   }, [])
+
+  // P&L bet logs
+  const pnlFetchRef = { current: async (uid) => {
+    if (!uid) return
+    setPnlLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('bet_logs')
+        .select('*')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false })
+        .limit(500)
+      if (error) throw error
+      setPnlBets(data || [])
+    } catch (e) { console.error('pnl fetch:', e) }
+    finally { setPnlLoading(false) }
+  }}
+  const refreshPnlBets = () => { if (user?.id) pnlFetchRef.current(user.id) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (user?.id) pnlFetchRef.current(user.id) }, [user?.id])
 
   const filterArbs = (arr) => arr.filter(a => {
     if (sport !== 'all' && a.sport !== sport) return false
@@ -411,6 +440,308 @@ export default function Home() {
         ) : (
           renderRowAge(e)
         )}
+      </div>
+    )
+  }
+
+  // ---------- P&L TRACKER ----------
+
+  const pnlLocked = userPlan === 'free'
+
+  const savePnlBet = async () => {
+    if (!user) return
+    const row = {
+      user_id: user.id,
+      game: pnlForm.game,
+      bookmaker: pnlForm.bookmaker,
+      bet_type: pnlForm.betType,
+      odds: pnlForm.odds ? Number(pnlForm.odds) : null,
+      stake: pnlForm.stake ? Number(pnlForm.stake) : 0,
+      result: pnlForm.result,
+      profit: pnlForm.profit ? Number(pnlForm.profit) : null,
+      sport: pnlForm.sport,
+      notes: pnlForm.notes,
+    }
+    try {
+      if (pnlEditId) {
+        await supabase.from('bet_logs').update(row).eq('id', pnlEditId).eq('user_id', user.id)
+      } else {
+        await supabase.from('bet_logs').insert(row)
+      }
+      setPnlFormOpen(false)
+      setPnlEditId(null)
+      setPnlForm({ game: '', bookmaker: '', betType: 'arb', odds: '', stake: '', result: 'pending', profit: '', sport: 'nba', notes: '' })
+      refreshPnlBets()
+    } catch (e) { console.error('save bet:', e) }
+  }
+
+  const deletePnlBet = async (id) => {
+    if (!user) return
+    await supabase.from('bet_logs').delete().eq('id', id).eq('user_id', user.id)
+    refreshPnlBets()
+  }
+
+  const editPnlBet = (bet) => {
+    setPnlEditId(bet.id)
+    setPnlForm({
+      game: bet.game || '',
+      bookmaker: bet.bookmaker || '',
+      betType: bet.bet_type || 'arb',
+      odds: bet.odds != null ? String(bet.odds) : '',
+      stake: bet.stake != null ? String(bet.stake) : '',
+      result: bet.result || 'pending',
+      profit: bet.profit != null ? String(bet.profit) : '',
+      sport: bet.sport || 'nba',
+      notes: bet.notes || '',
+    })
+    setPnlFormOpen(true)
+  }
+
+  const pnlFiltered = pnlBets.filter(b => {
+    if (pnlFilter !== 'all' && b.result !== pnlFilter) return false
+    if (pnlSportFilter !== 'all' && b.sport !== pnlSportFilter) return false
+    return true
+  })
+
+  const pnlStats = (() => {
+    const settled = pnlBets.filter(b => b.result === 'won' || b.result === 'lost')
+    const totalProfit = settled.reduce((s, b) => s + (b.profit || 0), 0)
+    const totalStaked = settled.reduce((s, b) => s + (b.stake || 0), 0)
+    const wins = settled.filter(b => b.result === 'won').length
+    const losses = settled.filter(b => b.result === 'lost').length
+    const pending = pnlBets.filter(b => b.result === 'pending').length
+    const roi = totalStaked > 0 ? ((totalProfit / totalStaked) * 100).toFixed(2) : '0.00'
+    const byBook = {}
+    settled.forEach(b => {
+      const k = b.bookmaker || 'Unknown'
+      if (!byBook[k]) byBook[k] = 0
+      byBook[k] += (b.profit || 0)
+    })
+    const bySport = {}
+    settled.forEach(b => {
+      const k = (b.sport || 'other').toUpperCase()
+      if (!bySport[k]) bySport[k] = 0
+      bySport[k] += (b.profit || 0)
+    })
+    return { totalProfit, totalStaked, wins, losses, pending, roi, byBook, bySport, total: pnlBets.length }
+  })()
+
+  const pnlInputClass = "bg-[#1a1812] border border-[#1e1c16] rounded-md text-[#eef1f5] px-3 py-2 text-[13px] font-medium outline-none focus:border-[#ff6b1a] w-full"
+  const pnlLabelClass = "block text-[11px] font-semibold tracking-wider uppercase text-[#5a6a78] mb-2"
+
+  const renderPnlView = () => {
+    if (pnlLocked) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
+          <div className="text-5xl mb-4">🔒</div>
+          <div className="text-[24px] font-black mb-2">P&amp;L Tracker is Pro</div>
+          <p className="text-[14px] text-[#5a6a78] max-w-[420px] mb-6 font-medium leading-relaxed">
+            Log every bet and track your running profit across books, sports, and time. Available exclusively on the Pro plan.
+          </p>
+          <button onClick={handleCheckout} className="px-8 py-3 rounded-xl bg-[#ff6b1a] text-black text-[14px] font-black hover:bg-[#ff8c42] transition-all border-none cursor-pointer">
+            Get Pro — $75/mo →
+          </button>
+        </div>
+      )
+    }
+    return (
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="px-5 pt-3 pb-3 bg-[#0f0e0b] border-b border-[#1e1c16] flex-shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-[22px] font-black tracking-tight">P&amp;L Tracker</div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => { setPnlEditId(null); setPnlForm({ game: '', bookmaker: '', betType: 'arb', odds: '', stake: '', result: 'pending', profit: '', sport: 'nba', notes: '' }); setPnlFormOpen(!pnlFormOpen) }}
+                className="px-4 py-[6px] rounded-md bg-[#ff6b1a] text-black text-[12px] font-black hover:bg-[#ff8c42] transition-all border-none cursor-pointer">
+                {pnlFormOpen ? 'Cancel' : '+ Log bet'}
+              </button>
+              <button onClick={() => setDashView('home')} className="border border-[#1e1c16] text-[#5a6a78] px-3 py-[6px] rounded-md text-[12px] font-medium hover:text-[#eef1f5] transition-all bg-transparent cursor-pointer">← Home</button>
+            </div>
+          </div>
+
+          {/* Summary cards */}
+          <div className="grid grid-cols-5 gap-2 mb-3">
+            {[
+              [pnlStats.totalProfit >= 0 ? `+$${pnlStats.totalProfit.toFixed(2)}` : `-$${Math.abs(pnlStats.totalProfit).toFixed(2)}`, 'Net P&L', pnlStats.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'],
+              [`${pnlStats.roi}%`, 'ROI', parseFloat(pnlStats.roi) >= 0 ? 'text-emerald-400' : 'text-red-400'],
+              [`${pnlStats.wins}W / ${pnlStats.losses}L`, 'Record', 'text-[#eef1f5]'],
+              [`$${pnlStats.totalStaked.toFixed(2)}`, 'Total staked', 'text-[#eef1f5]'],
+              [`${pnlStats.pending}`, 'Pending', 'text-[#ff6b1a]'],
+            ].map(([val, label, color], i) => (
+              <div key={i} className="bg-[#1a1812] border border-[#1e1c16] rounded-lg p-3 text-center">
+                <div className={`text-[16px] font-black leading-none ${color}`}>{val}</div>
+                <div className="text-[10px] text-[#5a6a78] font-semibold uppercase tracking-wider mt-1">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Breakdown by book & sport */}
+          {pnlStats.total > 0 && (
+            <div className="flex gap-4 mb-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] text-[#5a6a78] font-semibold uppercase tracking-wider">By book:</span>
+                {Object.entries(pnlStats.byBook).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([book, profit]) => (
+                  <span key={book} className={`text-[11px] font-semibold px-2 py-[2px] rounded-full border ${profit >= 0 ? 'border-emerald-800/25 text-emerald-400 bg-emerald-900/10' : 'border-red-800/25 text-red-400 bg-red-900/10'}`}>
+                    {book} {profit >= 0 ? '+' : ''}{profit.toFixed(0)}
+                  </span>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] text-[#5a6a78] font-semibold uppercase tracking-wider">By sport:</span>
+                {Object.entries(pnlStats.bySport).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([sp, profit]) => (
+                  <span key={sp} className={`text-[11px] font-semibold px-2 py-[2px] rounded-full border ${profit >= 0 ? 'border-emerald-800/25 text-emerald-400 bg-emerald-900/10' : 'border-red-800/25 text-red-400 bg-red-900/10'}`}>
+                    {sp} {profit >= 0 ? '+' : ''}{profit.toFixed(0)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Filters */}
+          <div className="flex items-center gap-[5px] flex-wrap">
+            {['all', 'won', 'lost', 'pending', 'void'].map(f => (
+              <button key={f} onClick={() => setPnlFilter(f)}
+                className={`px-[10px] py-[5px] rounded-md text-[12px] font-medium transition-all cursor-pointer border ${pnlFilter === f ? 'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                style={{fontFamily:"'Inter',sans-serif"}}>
+                {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
+              </button>
+            ))}
+            <div className="w-px h-4 bg-[#1e1c16] mx-1"></div>
+            {['all', 'nba', 'nfl', 'mlb', 'nhl', 'epl', 'mls', 'atp'].map(s => (
+              <button key={s} onClick={() => setPnlSportFilter(s)}
+                className={`px-[10px] py-[5px] rounded-md text-[12px] font-medium transition-all cursor-pointer border ${pnlSportFilter === s ? 'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                style={{fontFamily:"'Inter',sans-serif"}}>
+                {s === 'all' ? 'All Sports' : s.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {/* Add/edit bet form */}
+          {pnlFormOpen && (
+            <div className="mx-5 mt-4 mb-2 bg-[#1a1812] border border-[#1e1c16] rounded-xl p-5">
+              <div className="text-[14px] font-bold mb-4">{pnlEditId ? 'Edit bet' : 'Log a bet'}</div>
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div>
+                  <label className={pnlLabelClass}>Game / Event</label>
+                  <input type="text" value={pnlForm.game} onChange={e => setPnlForm({ ...pnlForm, game: e.target.value })} placeholder="Lakers vs Celtics" className={pnlInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
+                </div>
+                <div>
+                  <label className={pnlLabelClass}>Bookmaker</label>
+                  <input type="text" value={pnlForm.bookmaker} onChange={e => setPnlForm({ ...pnlForm, bookmaker: e.target.value })} placeholder="DraftKings" className={pnlInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
+                </div>
+                <div>
+                  <label className={pnlLabelClass}>Sport</label>
+                  <select value={pnlForm.sport} onChange={e => setPnlForm({ ...pnlForm, sport: e.target.value })} className={pnlInputClass} style={{fontFamily:"'Inter',sans-serif"}}>
+                    {['nba','nfl','mlb','nhl','epl','mls','atp','other'].map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-3 mb-3">
+                <div>
+                  <label className={pnlLabelClass}>Bet type</label>
+                  <select value={pnlForm.betType} onChange={e => setPnlForm({ ...pnlForm, betType: e.target.value })} className={pnlInputClass} style={{fontFamily:"'Inter',sans-serif"}}>
+                    <option value="arb">Arb</option>
+                    <option value="ev">+EV</option>
+                    <option value="middle">Middle</option>
+                    <option value="bonus">Bonus convert</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={pnlLabelClass}>Odds (American)</label>
+                  <input type="number" value={pnlForm.odds} onChange={e => setPnlForm({ ...pnlForm, odds: e.target.value })} placeholder="-110" className={pnlInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
+                </div>
+                <div>
+                  <label className={pnlLabelClass}>Stake $</label>
+                  <input type="number" value={pnlForm.stake} onChange={e => setPnlForm({ ...pnlForm, stake: e.target.value })} placeholder="100" className={pnlInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
+                </div>
+                <div>
+                  <label className={pnlLabelClass}>Profit / Loss $</label>
+                  <input type="number" value={pnlForm.profit} onChange={e => setPnlForm({ ...pnlForm, profit: e.target.value })} placeholder="4.50" className={pnlInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div>
+                  <label className={pnlLabelClass}>Result</label>
+                  <select value={pnlForm.result} onChange={e => setPnlForm({ ...pnlForm, result: e.target.value })} className={pnlInputClass} style={{fontFamily:"'Inter',sans-serif"}}>
+                    <option value="pending">Pending</option>
+                    <option value="won">Won</option>
+                    <option value="lost">Lost</option>
+                    <option value="void">Void</option>
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className={pnlLabelClass}>Notes (optional)</label>
+                  <input type="text" value={pnlForm.notes} onChange={e => setPnlForm({ ...pnlForm, notes: e.target.value })} placeholder="Any notes..." className={pnlInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={savePnlBet} className="px-5 py-2 rounded-md bg-[#ff6b1a] text-black text-[13px] font-black hover:bg-[#ff8c42] transition-all border-none cursor-pointer">
+                  {pnlEditId ? 'Update bet' : 'Save bet'}
+                </button>
+                <button onClick={() => { setPnlFormOpen(false); setPnlEditId(null) }} className="px-5 py-2 rounded-md bg-transparent border border-[#1e1c16] text-[#5a6a78] text-[13px] font-medium hover:text-[#eef1f5] transition-all cursor-pointer">Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Bet log table */}
+          <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.3fr 0.8fr 0.7fr 0.6fr 0.6fr 0.7fr 0.6fr 60px'}}>
+            <span>Game</span><span>Book</span><span>Type</span><span>Odds</span><span>Stake</span><span>P&amp;L</span><span>Result</span><span></span>
+          </div>
+
+          {pnlLoading ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-8 h-8 border-2 border-[#ff6b1a] border-t-transparent rounded-full animate-spin mb-3"></div>
+              <div className="text-[13px] text-[#5a6a78] font-medium">Loading bets...</div>
+            </div>
+          ) : pnlFiltered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 text-[#5a6a78]">
+              <div className="text-3xl opacity-30 mb-3">📊</div>
+              <div className="text-[15px] font-bold text-[#eef1f5]">{pnlBets.length === 0 ? 'No bets logged yet' : 'No bets match filters'}</div>
+              <div className="text-[12px] mt-1 max-w-[400px] text-center">
+                {pnlBets.length === 0 ? 'Click "+ Log bet" to start tracking your P&L' : 'Try changing the filters above'}
+              </div>
+            </div>
+          ) : pnlFiltered.map((b, i) => {
+            const resultColors = { won: 'text-emerald-400 bg-emerald-900/10 border-emerald-800/25', lost: 'text-red-400 bg-red-900/10 border-red-800/25', pending: 'text-[#ff6b1a] bg-orange-900/10 border-orange-800/25', void: 'text-[#5a6a78] bg-[#1a1812] border-[#1e1c16]' }
+            const profitColor = (b.profit || 0) > 0 ? 'text-emerald-400' : (b.profit || 0) < 0 ? 'text-red-400' : 'text-[#5a6a78]'
+            return (
+              <div key={b.id || i} className="grid px-5 py-[10px] border-b border-[#1e1c16] items-center hover:bg-[#0f0e0b] transition-colors" style={{gridTemplateColumns:'1.3fr 0.8fr 0.7fr 0.6fr 0.6fr 0.7fr 0.6fr 60px'}}>
+                <div>
+                  <div className="text-[13px] font-semibold leading-tight">{b.game || '—'}</div>
+                  <div className="flex items-center gap-[6px] mt-[3px]">
+                    <span className={SPORT_TAG}>{(b.sport || '').toUpperCase()}</span>
+                    <span className="text-[10px] text-[#5a6a78] font-medium">{b.created_at ? new Date(b.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}</span>
+                  </div>
+                </div>
+                <div className="text-[12px] text-[#7a8a96] font-medium">{b.bookmaker || '—'}</div>
+                <div><span className="text-[10px] font-semibold px-[6px] py-[2px] rounded bg-[#1a1812] border border-[#1e1c16] text-[#7a8a96] uppercase">{b.bet_type || '—'}</span></div>
+                <div className="text-[12px] text-[#ff6b1a] font-semibold">{b.odds != null ? (b.odds > 0 ? `+${b.odds}` : b.odds) : '—'}</div>
+                <div className="text-[12px] font-medium">${b.stake || 0}</div>
+                <div className={`text-[14px] font-bold ${profitColor}`}>
+                  {b.profit != null ? (b.profit >= 0 ? `+$${Number(b.profit).toFixed(2)}` : `-$${Math.abs(b.profit).toFixed(2)}`) : '—'}
+                </div>
+                <div>
+                  <span className={`text-[10px] font-bold px-[6px] py-[2px] rounded-full border uppercase ${resultColors[b.result] || resultColors.pending}`}>
+                    {b.result || 'pending'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 justify-end">
+                  <button onClick={() => editPnlBet(b)} className="w-6 h-6 rounded flex items-center justify-center bg-transparent border border-[#1e1c16] text-[#5a6a78] text-[11px] hover:text-[#eef1f5] hover:border-[#2a2820] transition-all cursor-pointer">✎</button>
+                  <button onClick={() => deletePnlBet(b.id)} className="w-6 h-6 rounded flex items-center justify-center bg-transparent border border-[#1e1c16] text-[#5a6a78] text-[11px] hover:text-red-400 hover:border-red-900 transition-all cursor-pointer">×</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="h-[26px] flex-shrink-0 flex items-center gap-4 px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[11px] text-[#5a6a78] font-medium">
+          <span>{pnlBets.length} bets logged</span>
+          <span className="text-[#1e1c16]">|</span>
+          <span>{pnlStats.wins}W {pnlStats.losses}L {pnlStats.pending} pending</span>
+          <span className="ml-auto">P&amp;L Tracker · Pro</span>
+        </div>
       </div>
     )
   }
@@ -1042,7 +1373,7 @@ export default function Home() {
           {isPro && <span className="bg-[#ff6b1a] text-black px-2 py-[2px] rounded-full text-[10px] font-black tracking-wider">PRO</span>}
         </div>
         <div className="flex items-center gap-5">
-          {!isBonusView && !isMiddlesView && !isCalcView && (
+          {!isBonusView && !isMiddlesView && !isCalcView && !isPnlView && (
             <>
               <div className="text-right">
                 <div className="text-[15px] font-bold text-emerald-400">{filtered.length}</div>
@@ -1157,6 +1488,8 @@ export default function Home() {
                 <span className="ml-auto">FluxOdds v1.0</span>
               </div>
             </div>
+          ) : isPnlView ? (
+            renderPnlView()
           ) : isCalcView ? (
             renderCalcView()
           ) : isMiddlesView ? (
