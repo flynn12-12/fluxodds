@@ -78,6 +78,7 @@ export default function Home() {
   const [liveData, setLiveData] = useState([])      // prematch arbs
   const [liveArbsData, setLiveArbsData] = useState([]) // in-game live arbs
   const [evData, setEvData] = useState([])
+  const [middlesData, setMiddlesData] = useState([])
 
   const [bonusBook, setBonusBook] = useState('draftkings')
   const [bonusAmount, setBonusAmount] = useState(100)
@@ -88,6 +89,7 @@ export default function Home() {
   const isPrematchView = toolName === 'Prematch Arbitrage'
   const isLiveView = toolName === 'Live Arbitrage'
   const isEvView = toolName === 'Positive EV Bets'
+  const isMiddlesView = toolName === 'Middles Finder'
   const isBonusView = toolName === 'Bonus Bet Converter'
 
   useEffect(() => {
@@ -159,6 +161,21 @@ export default function Home() {
     return () => { cancelled = true; clearInterval(interval) }
   }, [])
 
+  // Middles
+  useEffect(() => {
+    let cancelled = false
+    const fetchMiddles = async () => {
+      try {
+        const res = await fetch('/api/middles', { cache: 'no-store' })
+        const data = await res.json()
+        if (!cancelled) setMiddlesData(data.middles || [])
+      } catch (e) { console.error('middles fetch:', e) }
+    }
+    fetchMiddles()
+    const interval = setInterval(fetchMiddles, 2000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [])
+
   const filterArbs = (arr) => arr.filter(a => {
     if (sport !== 'all' && a.sport !== sport) return false
     if (a.profit < minP) return false
@@ -180,9 +197,18 @@ export default function Home() {
     return true
   })
 
+  const filteredMiddles = middlesData.filter(m => {
+    if (sport !== 'all' && m.sport !== sport) return false
+    if (query && !m.game.toLowerCase().includes(query)
+      && !(m.bA || '').toLowerCase().includes(query)
+      && !(m.bB || '').toLowerCase().includes(query)) return false
+    return true
+  })
+
   const isPro = userPlan === 'pro'
   const shouldBlurArb = (a) => userPlan === 'free' && a.profit > FREE_PROFIT_CAP
   const shouldBlurEv = (e) => userPlan === 'free' && e.ev > FREE_EV_CAP
+  const middlesLocked = userPlan === 'free'
   const bonusLocked = userPlan === 'free'
 
   const openTool = (name) => {
@@ -377,6 +403,116 @@ export default function Home() {
     )
   }
 
+  const renderMiddleRow = (m, i) => {
+    return (
+      <div key={m.fingerprint || i}
+        className="grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors hover:bg-[#0f0e0b]"
+        style={{gridTemplateColumns:'1.5fr 1.3fr 1.3fr 100px 90px 90px'}}>
+        <div>
+          <div className="text-[13px] font-semibold mb-[4px]">{m.game}</div>
+          <div className="flex items-center gap-[6px] flex-wrap">
+            <span className={SPORT_TAG}>{(m.sport || '').toUpperCase()}</span>
+            {m.market && <span className={MARKET_TAG}>{m.market}</span>}
+            <span className="text-[11px] text-[#5a6a78] font-medium">{fmtTime(m.time)}</span>
+          </div>
+        </div>
+        <div>
+          <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{m.bA}</div>
+          <div className="text-[13px] font-semibold leading-tight">{m.betA}</div>
+          <div className="text-[12px] text-[#ff6b1a] font-semibold mt-[2px]">{m.oA}</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{m.bB}</div>
+          <div className="text-[13px] font-semibold leading-tight">{m.betB}</div>
+          <div className="text-[12px] text-[#ff6b1a] font-semibold mt-[2px]">{m.oB}</div>
+        </div>
+        <div>
+          <div className="text-[18px] font-black text-emerald-400 leading-none">{m.gap}</div>
+          <div className="text-[10px] text-[#5a6a78] font-medium mt-[2px]">{m.unit || 'pts'} window</div>
+        </div>
+        <div>
+          <div className="text-[14px] font-bold text-[#eef1f5]">{m.lowLine}–{m.highLine}</div>
+          <div className="text-[10px] text-[#5a6a78] font-medium mt-[1px]">{m.type === 'spread' ? 'Spread' : 'Total'}</div>
+        </div>
+        <div>
+          <div className={`text-[14px] font-bold ${m.juice <= 0 ? 'text-emerald-400' : 'text-[#ff6b1a]'}`}>{m.juice <= 0 ? 'FREE' : `${m.juice}%`}</div>
+          <div className="text-[10px] text-[#5a6a78] font-medium mt-[1px]">juice</div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderMiddlesView = () => {
+    if (middlesLocked) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
+          <div className="text-5xl mb-4">🔒</div>
+          <div className="text-[24px] font-black mb-2">Middles Finder is Pro</div>
+          <p className="text-[14px] text-[#5a6a78] max-w-[420px] mb-6 font-medium leading-relaxed">
+            Find overlapping lines across sportsbooks where both sides can win. Available exclusively on the Pro plan.
+          </p>
+          <button onClick={handleCheckout} className="px-8 py-3 rounded-xl bg-[#ff6b1a] text-black text-[14px] font-black hover:bg-[#ff8c42] transition-all border-none cursor-pointer">
+            Get Pro — $75/mo →
+          </button>
+        </div>
+      )
+    }
+    return (
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="px-5 pt-3 pb-3 bg-[#0f0e0b] border-b border-[#1e1c16] flex-shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="text-[22px] font-black tracking-tight">Middles Finder</div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-[12px] text-[#5a6a78] font-medium">{filteredMiddles.length} middles</span>
+              <button onClick={() => setDashView('home')} className="border border-[#1e1c16] text-[#5a6a78] px-3 py-1 rounded-md text-[12px] font-medium hover:text-[#eef1f5] transition-all bg-transparent cursor-pointer">← Home</button>
+            </div>
+          </div>
+          <div className="flex items-center gap-[5px] flex-wrap">
+            {['all','nba','nfl','mlb','nhl','epl','mls','atp'].map(s => (
+              <button key={s} onClick={() => setSport(s)}
+                className={`px-[10px] py-[5px] rounded-md text-[12px] font-medium transition-all cursor-pointer border ${sport===s?'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]':'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                style={{fontFamily:"'Inter',sans-serif"}}>
+                {s === 'all' ? 'All Sports' : s.toUpperCase()}
+              </button>
+            ))}
+            <div className="ml-auto flex items-center gap-2 bg-[#1a1812] border border-[#1e1c16] rounded-md px-3 py-[5px]">
+              <span className="text-[#5a6a78] text-[12px]">⌕</span>
+              <input type="text" placeholder="Search..." onChange={e => setQuery(e.target.value.toLowerCase())}
+                className="bg-transparent border-none text-[12px] text-[#eef1f5] outline-none w-[110px] font-medium"
+                style={{fontFamily:"'Inter',sans-serif"}}/>
+            </div>
+          </div>
+          <div className="mt-3 bg-emerald-900/10 border border-emerald-800/25 rounded-md px-3 py-[6px] flex items-center gap-2">
+            <span className="text-[14px]">🎯</span>
+            <span className="text-[12px] text-[#a8a18b] font-medium leading-tight">Middles are overlapping lines across books where both bets can win. The &ldquo;window&rdquo; shows how many points/runs/goals the result can land in to hit the middle. Lower juice = cheaper to play.</span>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.5fr 1.3fr 1.3fr 100px 90px 90px'}}>
+            <span>Game</span><span>Side A</span><span>Side B</span><span>Window</span><span>Lines</span><span>Juice</span>
+          </div>
+          {filteredMiddles.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 text-[#5a6a78]">
+              <div className="text-3xl opacity-30 mb-3">🎯</div>
+              <div className="text-[15px] font-bold text-[#eef1f5]">No middles right now</div>
+              <div className="text-[12px] mt-1 max-w-[400px] text-center">Scanning spread and total lines across 40+ books for overlapping opportunities</div>
+            </div>
+          ) : filteredMiddles.map((m, i) => renderMiddleRow(m, i))}
+        </div>
+
+        <div className="h-[26px] flex-shrink-0 flex items-center gap-4 px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[11px] text-[#5a6a78] font-medium">
+          <span><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected · 40 books</span>
+          <span className="text-[#1e1c16]">|</span>
+          <span>Spreads + Totals · line gaps across books</span>
+          <span className="ml-auto">Middles Finder · Pro</span>
+        </div>
+      </div>
+    )
+  }
+
   const renderBonusView = () => {
     if (bonusLocked) {
       return (
@@ -513,6 +649,7 @@ export default function Home() {
     let filtered = []
     if (isLiveView) filtered = filteredLiveArbs
     else if (isEvView) filtered = filteredEv
+    else if (isMiddlesView) filtered = filteredMiddles
     else filtered = filteredArbs
 
     return (
@@ -531,7 +668,7 @@ export default function Home() {
           {isPro && <span className="bg-[#ff6b1a] text-black px-2 py-[2px] rounded-full text-[10px] font-black tracking-wider">PRO</span>}
         </div>
         <div className="flex items-center gap-5">
-          {!isBonusView && (
+          {!isBonusView && !isMiddlesView && (
             <>
               <div className="text-right">
                 <div className="text-[15px] font-bold text-emerald-400">{filtered.length}</div>
@@ -541,6 +678,20 @@ export default function Home() {
               <div className="text-right">
                 <div className="text-[15px] font-bold text-[#ff6b1a]">+{(isEvView ? (filtered[0]?.ev || 0) : (filtered[0]?.profit || 0))}%</div>
                 <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">{isEvView ? 'Best EV' : 'Best profit'}</div>
+              </div>
+              <div className="w-px h-7 bg-[#1e1c16]"></div>
+            </>
+          )}
+          {isMiddlesView && !middlesLocked && (
+            <>
+              <div className="text-right">
+                <div className="text-[15px] font-bold text-emerald-400">{filteredMiddles.length}</div>
+                <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">Middles</div>
+              </div>
+              <div className="w-px h-7 bg-[#1e1c16]"></div>
+              <div className="text-right">
+                <div className="text-[15px] font-bold text-[#ff6b1a]">{filteredMiddles[0]?.gap || 0}</div>
+                <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">Widest gap</div>
               </div>
               <div className="w-px h-7 bg-[#1e1c16]"></div>
             </>
@@ -632,6 +783,8 @@ export default function Home() {
                 <span className="ml-auto">FluxOdds v1.0</span>
               </div>
             </div>
+          ) : isMiddlesView ? (
+            renderMiddlesView()
           ) : isBonusView ? (
             renderBonusView()
           ) : (
