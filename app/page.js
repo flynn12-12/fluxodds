@@ -11,6 +11,26 @@ const TICKS = [
   {game:'Chiefs vs Ravens',sport:'NFL',profit:'+2.1%',books:'PointsBet / BetRivers'},
 ]
 
+// Common books that offer bonus bets — drop-down list for the converter
+const BONUS_BOOKS = [
+  { id: 'draftkings', label: 'DraftKings' },
+  { id: 'fanduel', label: 'FanDuel' },
+  { id: 'betmgm', label: 'BetMGM' },
+  { id: 'caesars', label: 'Caesars' },
+  { id: 'espnbet', label: 'ESPN Bet' },
+  { id: 'fanatics', label: 'Fanatics' },
+  { id: 'bet365', label: 'bet365' },
+  { id: 'betrivers', label: 'BetRivers' },
+  { id: 'hardrockbet', label: 'Hard Rock Bet' },
+  { id: 'unibet', label: 'Unibet' },
+  { id: 'pointsbet', label: 'PointsBet' },
+  { id: 'wynnbet', label: 'WynnBET' },
+  { id: 'circa', label: 'Circa' },
+  { id: 'bovada', label: 'Bovada' },
+  { id: 'mybookie', label: 'MyBookie' },
+  { id: 'betonline', label: 'BetOnline' },
+]
+
 const SPORT_TAG = 'bg-[#1e1c16] text-[#7a8a96] border border-[#2a2820] text-[9px] font-semibold px-[6px] py-[1px] rounded'
 const MARKET_TAG = 'bg-orange-900/10 text-[#ff6b1a] border border-orange-800/20 text-[9px] font-semibold px-[6px] py-[1px] rounded'
 
@@ -66,7 +86,15 @@ export default function Home() {
   const [liveData, setLiveData] = useState([])
   const [evData, setEvData] = useState([])
 
+  // Bonus Bet Converter state
+  const [bonusBook, setBonusBook] = useState('draftkings')
+  const [bonusAmount, setBonusAmount] = useState(100)
+  const [bonusLoading, setBonusLoading] = useState(false)
+  const [bonusResults, setBonusResults] = useState(null)
+  const [bonusError, setBonusError] = useState('')
+
   const isEvView = toolName === 'Positive EV Bets'
+  const isBonusView = toolName === 'Bonus Bet Converter'
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -92,7 +120,6 @@ export default function Home() {
     return () => clearInterval(t)
   }, [])
 
-  // Poll arbs
   useEffect(() => {
     let cancelled = false
     const fetchArbs = async () => {
@@ -107,7 +134,6 @@ export default function Home() {
     return () => { cancelled = true; clearInterval(interval) }
   }, [])
 
-  // Poll EV bets
   useEffect(() => {
     let cancelled = false
     const fetchEv = async () => {
@@ -118,7 +144,7 @@ export default function Home() {
       } catch (e) { console.error('ev fetch:', e) }
     }
     fetchEv()
-    const interval = setInterval(fetchEv, 2000) // 2s — EV moves slower than arbs
+    const interval = setInterval(fetchEv, 2000)
     return () => { cancelled = true; clearInterval(interval) }
   }, [])
 
@@ -143,10 +169,16 @@ export default function Home() {
   const isPro = userPlan === 'pro'
   const shouldBlurArb = (a) => userPlan === 'free' && a.profit > FREE_PROFIT_CAP
   const shouldBlurEv = (e) => userPlan === 'free' && e.ev > FREE_EV_CAP
+  // Bonus Bet Converter is fully Pro-only
+  const bonusLocked = userPlan === 'free'
 
   const openTool = (name) => {
     if (!user) { setLoginOpen(true); return }
     setToolName(name); setDashView('arb'); setView('dashboard'); setSidebarOpen(false)
+    // Reset bonus state when entering converter fresh
+    if (name === 'Bonus Bet Converter') {
+      setBonusResults(null); setBonusError('')
+    }
   }
   const launchDash = () => {
     if (!user) { setLoginOpen(true); return }
@@ -201,14 +233,33 @@ export default function Home() {
     setUser(null); setUserPlan('free'); setView('marketing')
   }
 
+  const runBonusConversion = async () => {
+    setBonusLoading(true); setBonusError(''); setBonusResults(null)
+    try {
+      const res = await fetch('/api/bonus-converter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bonusBookID: bonusBook, bonusAmount }),
+      })
+      const data = await res.json()
+      if (data.error) setBonusError(data.error)
+      else setBonusResults(data)
+    } catch (e) {
+      setBonusError('Failed to run scan. Please try again.')
+    } finally {
+      setBonusLoading(false)
+    }
+  }
+
   const faqs = [
     {q:'Is arbitrage betting legal?', a:"Yes — arbitrage betting is completely legal. You're simply placing bets at different sportsbooks to guarantee profit from odds discrepancies. FluxOdds is a data and analysis tool only."},
     {q:'How is profit actually guaranteed?', a:"When sportsbooks disagree on odds, the math can create a situation where betting on every outcome still results in profit. FluxOdds finds these windows and calculates exact stakes."},
     {q:"What's the difference between arbs and +EV?", a:"Arbitrage = guaranteed profit on every bet (smaller, more frequent wins). +EV = bets where the math says you'll profit long-term even if individual bets can lose. We use Pinnacle's de-vigged sharp lines as the fair value reference."},
-    {q:'How fast are the arbs detected?', a:'Our engine scans odds continuously. Most arbs appear within 1 second. Pro and Sharp subscribers get priority queue access — crucial since many arbs disappear within minutes.'},
-    {q:'Do I need a lot of money to start?', a:'Not at all. You can start with as little as $50 across two books. Our calculator scales to any bankroll. Most users start small, verify the system, then scale up.'},
-    {q:'Which sportsbooks do you cover?', a:'40+ sportsbooks including DraftKings, FanDuel, BetMGM, Caesars, PointsBet, BetRivers, Unibet, and many more. We continuously add new books.'},
-    {q:'Can I cancel anytime?', a:'Absolutely. No contracts. Cancel from your dashboard with one click. You keep access until the end of your billing period.'},
+    {q:"What's a bonus bet converter?", a:"Sportsbooks give out bonus bets (free bets) where you only keep the winnings, not the stake. Our converter finds the optimal way to convert that bonus into guaranteed real cash by hedging the bet at a different sportsbook. Typical conversion: 65–80% of the bonus value as locked-in profit."},
+    {q:'How fast are the arbs detected?', a:'Our engine scans odds continuously. Most arbs appear within 1 second.'},
+    {q:'Do I need a lot of money to start?', a:'Not at all. You can start with as little as $50 across two books. Our calculator scales to any bankroll.'},
+    {q:'Which sportsbooks do you cover?', a:'40+ sportsbooks including DraftKings, FanDuel, BetMGM, Caesars, PointsBet, BetRivers, Unibet, and many more.'},
+    {q:'Can I cancel anytime?', a:'Absolutely. No contracts. Cancel from your dashboard with one click.'},
   ]
 
   const tools = [
@@ -216,7 +267,7 @@ export default function Home() {
     {id:'prematch', icon:'🗓', name:'Prematch Arbitrage', desc:'Plan ahead, less time pressure'},
     {id:'ev', icon:'📈', name:'Positive EV Bets', desc:'Long-term mathematical edge', badge:'NEW'},
     {id:'middles', icon:'🎯', name:'Middles Finder', desc:'Win both sides on line moves'},
-    {id:'freebets', icon:'🎁', name:'Free Bet Converter', desc:'Turn promos into real cash', badge:'PRO'},
+    {id:'freebets', icon:'🎁', name:'Bonus Bet Converter', desc:'Turn promos into real cash', badge:'PRO'},
     {id:'calculator', icon:'🧮', name:'Bet Calculator', desc:'Perfect stakes, any bankroll'},
   ]
 
@@ -241,7 +292,6 @@ export default function Home() {
     return <div className="text-[10px] text-[#5a6a78] font-medium mt-[3px] tabular-nums">{fmtAge(ageSec)}</div>
   }
 
-  // ─── ARB ROW RENDERER ───
   const renderArbRow = (a, i) => {
     const blurred = shouldBlurArb(a)
     return (
@@ -282,7 +332,6 @@ export default function Home() {
     )
   }
 
-  // ─── EV ROW RENDERER ───
   const renderEvRow = (e, i) => {
     const blurred = shouldBlurEv(e)
     return (
@@ -319,11 +368,142 @@ export default function Home() {
     )
   }
 
-  // ─── DASHBOARD ───────────────────────────────────────────────────────────────
+  // ─── BONUS BET CONVERTER VIEW ───
+  const renderBonusView = () => {
+    if (bonusLocked) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
+          <div className="text-5xl mb-4">🔒</div>
+          <div className="text-[24px] font-black mb-2">Bonus Bet Converter is Pro</div>
+          <p className="text-[14px] text-[#5a6a78] max-w-[420px] mb-6 font-medium leading-relaxed">
+            Turn $100 of bonus bets into ~$70-80 of guaranteed real cash. Available exclusively on the Pro plan.
+          </p>
+          <button onClick={handleCheckout} className="px-8 py-3 rounded-xl bg-[#ff6b1a] text-black text-[14px] font-black hover:bg-[#ff8c42] transition-all border-none cursor-pointer">
+            Get Pro — $75/mo →
+          </button>
+        </div>
+      )
+    }
+    return (
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="px-5 pt-5 pb-4 bg-[#0f0e0b] border-b border-[#1e1c16]">
+          <div className="max-w-[760px]">
+            <div className="text-[22px] font-black tracking-tight mb-2">Bonus Bet Converter</div>
+            <p className="text-[12px] text-[#5a6a78] mb-4 leading-relaxed font-medium">
+              Got a bonus bet (free bet)? Place the bonus on a longshot at your bonus book, hedge the opposite outcome at a different book with real cash. Walk away with ~70-80% of the bonus value as guaranteed profit.
+            </p>
+            <div className="flex items-end gap-3 flex-wrap">
+              <div>
+                <label className="block text-[11px] font-semibold tracking-wider uppercase text-[#5a6a78] mb-2">Bonus from</label>
+                <select value={bonusBook} onChange={e => setBonusBook(e.target.value)}
+                  className="bg-[#1a1812] border border-[#1e1c16] rounded-md text-[#eef1f5] px-3 py-2 text-[13px] font-medium outline-none focus:border-[#ff6b1a] min-w-[180px]"
+                  style={{fontFamily:"'Inter',sans-serif"}}>
+                  {BONUS_BOOKS.map(b => <option key={b.id} value={b.id}>{b.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold tracking-wider uppercase text-[#5a6a78] mb-2">Bonus amount $</label>
+                <input type="number" min="1" max="5000" value={bonusAmount}
+                  onChange={e => setBonusAmount(parseFloat(e.target.value) || 0)}
+                  className="bg-[#1a1812] border border-[#1e1c16] rounded-md text-[#eef1f5] px-3 py-2 text-[13px] font-medium outline-none focus:border-[#ff6b1a] w-[140px]"
+                  style={{fontFamily:"'Inter',sans-serif"}}/>
+              </div>
+              <button onClick={runBonusConversion} disabled={bonusLoading || !bonusAmount}
+                className="px-5 py-2 rounded-md bg-[#ff6b1a] text-black text-[13px] font-black hover:bg-[#ff8c42] transition-all border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                {bonusLoading ? 'Scanning...' : 'Find conversions →'}
+              </button>
+              <button onClick={() => setDashView('home')}
+                className="ml-auto border border-[#1e1c16] text-[#5a6a78] px-3 py-2 rounded-md text-[12px] font-medium hover:text-[#eef1f5] transition-all bg-transparent cursor-pointer">
+                ← Home
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {bonusError && (
+            <div className="m-5 p-4 bg-red-900/10 border border-red-800/30 rounded-md text-red-400 text-[13px]">{bonusError}</div>
+          )}
+          {bonusLoading && (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-8 h-8 border-2 border-[#ff6b1a] border-t-transparent rounded-full animate-spin mb-3"></div>
+              <div className="text-[13px] text-[#5a6a78] font-medium">Scanning longshots and hedge prices...</div>
+            </div>
+          )}
+          {!bonusLoading && bonusResults && bonusResults.conversions && (
+            <>
+              {bonusResults.conversions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-[#5a6a78]">
+                  <div className="text-3xl opacity-30 mb-3">🎁</div>
+                  <div className="text-[15px] font-bold text-[#eef1f5]">No viable conversions right now</div>
+                  <div className="text-[12px] mt-1 max-w-[400px] text-center">
+                    {bonusResults.scanned} events scanned. Try a different bonus book, or check back when more games are upcoming.
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="px-5 pt-4 pb-2 text-[11px] text-[#5a6a78] font-medium">
+                    Found <span className="text-[#ff6b1a] font-bold">{bonusResults.conversions.length}</span> conversions across <span className="text-[#eef1f5] font-bold">{bonusResults.scanned}</span> upcoming games. Sorted by best conversion rate.
+                  </div>
+                  <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.5fr 1.5fr 1.5fr 100px 100px'}}>
+                    <span>Game</span><span>Bonus bet (longshot)</span><span>Hedge bet</span><span>Hedge cost</span><span>Locked profit</span>
+                  </div>
+                  {bonusResults.conversions.map((c, i) => (
+                    <div key={`${c.eventID}-${i}`} className="grid px-5 py-[14px] border-b border-[#1e1c16] items-center hover:bg-[#0f0e0b] transition-colors" style={{gridTemplateColumns:'1.5fr 1.5fr 1.5fr 100px 100px'}}>
+                      <div>
+                        <div className="text-[13px] font-semibold mb-[4px]">{c.game}</div>
+                        <div className="flex items-center gap-[6px] flex-wrap">
+                          <span className={SPORT_TAG}>{(c.sport || '').toUpperCase()}</span>
+                          {c.market && <span className={MARKET_TAG}>{c.market}</span>}
+                          <span className="text-[11px] text-[#5a6a78] font-medium">{fmtTime(c.time)}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{c.bonusBet.book}</div>
+                        <div className="text-[13px] font-semibold leading-tight">{c.bonusBet.label}</div>
+                        <div className="text-[12px] text-[#ff6b1a] font-semibold mt-[2px]">{c.bonusBet.odds} · ${c.bonusBet.stake} bonus</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{c.hedge.book}</div>
+                        <div className="text-[13px] font-semibold leading-tight">{c.hedge.label}</div>
+                        <div className="text-[12px] text-[#ff6b1a] font-semibold mt-[2px]">{c.hedge.odds}</div>
+                      </div>
+                      <div>
+                        <div className="text-[14px] font-bold text-[#eef1f5]">${c.hedge.stake.toFixed(2)}</div>
+                        <div className="text-[10px] text-[#5a6a78] font-medium">real cash</div>
+                      </div>
+                      <div>
+                        <div className="text-[18px] font-black text-emerald-400 leading-none">${c.lockedProfit.toFixed(2)}</div>
+                        <div className="text-[11px] text-[#5a6a78] font-medium mt-[2px]">{c.conversionPct}% rate</div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </>
+          )}
+          {!bonusLoading && !bonusResults && !bonusError && (
+            <div className="flex flex-col items-center justify-center py-16 text-[#5a6a78]">
+              <div className="text-3xl opacity-30 mb-3">🎁</div>
+              <div className="text-[15px] font-bold text-[#eef1f5]">Pick your bonus book and amount above</div>
+              <div className="text-[12px] mt-1">We'll find the best conversion options across 40+ books</div>
+            </div>
+          )}
+        </div>
+
+        <div className="h-[26px] flex-shrink-0 flex items-center gap-4 px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[11px] text-[#5a6a78] font-medium">
+          <span><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected · 40 books</span>
+          <span className="text-[#1e1c16]">|</span>
+          <span>SNR (stake-not-returned) lock conversion</span>
+          <span className="ml-auto">Bonus Bet Converter · Pro</span>
+        </div>
+      </div>
+    )
+  }
+
+  // ─── DASHBOARD ───
   if (view === 'dashboard') {
     const filtered = isEvView ? filteredEv : filteredArbs
-    const minLabel = isEvView ? 'Min EV' : 'Min profit'
-    const sortLabel = isEvView ? '+EV' : 'Highest profit first'
 
     return (
     <div style={{fontFamily:"'Inter',sans-serif"}} className="flex flex-col h-screen bg-[#080806] text-[#eef1f5] overflow-hidden">
@@ -341,16 +521,20 @@ export default function Home() {
           {isPro && <span className="bg-[#ff6b1a] text-black px-2 py-[2px] rounded-full text-[10px] font-black tracking-wider">PRO</span>}
         </div>
         <div className="flex items-center gap-5">
-          <div className="text-right">
-            <div className="text-[15px] font-bold text-emerald-400">{filtered.length}</div>
-            <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">{isEvView ? 'EV bets' : 'Arbs today'}</div>
-          </div>
-          <div className="w-px h-7 bg-[#1e1c16]"></div>
-          <div className="text-right">
-            <div className="text-[15px] font-bold text-[#ff6b1a]">+{(isEvView ? (filtered[0]?.ev || 0) : (filtered[0]?.profit || 0))}%</div>
-            <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">{isEvView ? 'Best EV' : 'Best profit'}</div>
-          </div>
-          <div className="w-px h-7 bg-[#1e1c16]"></div>
+          {!isBonusView && (
+            <>
+              <div className="text-right">
+                <div className="text-[15px] font-bold text-emerald-400">{filtered.length}</div>
+                <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">{isEvView ? 'EV bets' : 'Arbs today'}</div>
+              </div>
+              <div className="w-px h-7 bg-[#1e1c16]"></div>
+              <div className="text-right">
+                <div className="text-[15px] font-bold text-[#ff6b1a]">+{(isEvView ? (filtered[0]?.ev || 0) : (filtered[0]?.profit || 0))}%</div>
+                <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">{isEvView ? 'Best EV' : 'Best profit'}</div>
+              </div>
+              <div className="w-px h-7 bg-[#1e1c16]"></div>
+            </>
+          )}
           <button onClick={() => setView('marketing')} className="border border-[#1e1c16] text-[#5a6a78] px-3 py-[5px] rounded-md text-[12px] font-medium hover:text-[#eef1f5] hover:border-[#2a2820] transition-all bg-transparent cursor-pointer">← Back to site</button>
           <button onClick={handleSignout} className="border border-[#1e1c16] text-[#5a6a78] px-3 py-[5px] rounded-md text-[12px] font-medium hover:text-red-400 hover:border-red-900 transition-all bg-transparent cursor-pointer">Sign out</button>
           <div className="w-7 h-7 rounded-full bg-[#ff6b1a] flex items-center justify-center text-[11px] font-black text-black cursor-pointer">{user?.email?.[0]?.toUpperCase()||'U'}</div>
@@ -367,7 +551,7 @@ export default function Home() {
                 {name:'Prematch Arbitrage',icon:'🗓'},
                 {name:'Positive EV Bets',icon:'📈',badge:'NEW'},
                 {name:'Middles Finder',icon:'🎯'},
-                {name:'Free Bet Converter',icon:'🎁',badge:'PRO'},
+                {name:'Bonus Bet Converter',icon:'🎁',badge:'PRO'},
               ].map(t => (
                 <button key={t.name} onClick={() => openTool(t.name)}
                   className={`flex items-center gap-3 w-full px-2 py-[9px] rounded-lg text-[13px] font-medium transition-all mb-[2px] cursor-pointer ${toolName===t.name&&dashView==='arb'?'bg-orange-900/10 border border-orange-800/20 text-[#ff6b1a]':'text-[#5a6a78] hover:bg-[#1a1812] hover:text-[#eef1f5] border border-transparent'}`}
@@ -394,7 +578,7 @@ export default function Home() {
               <div className="mt-auto p-3 border-t border-[#1e1c16]">
                 <div className="bg-orange-900/5 border border-orange-800/15 rounded-xl p-3">
                   <div className="text-[13px] font-bold text-[#ff6b1a]">Upgrade to Pro</div>
-                  <div className="text-[11px] text-[#5a6a78] mt-1">Unlimited arbs, all sports & alerts</div>
+                  <div className="text-[11px] text-[#5a6a78] mt-1">Unlimited arbs, +EV, bonus converter, alerts</div>
                   <button onClick={handleCheckout} className="block w-full mt-2 py-2 rounded-lg bg-[#ff6b1a] text-black text-[11px] font-black text-center border-none cursor-pointer hover:bg-[#ff8c42]">Get Pro — $75/mo</button>
                 </div>
               </div>
@@ -415,7 +599,7 @@ export default function Home() {
                   FIND THE <span className="text-[#ff6b1a]">EDGE.</span><br/>
                   <span className="text-[#2a2820]">BEAT THE BOOKS.</span>
                 </h2>
-                <p className="text-[14px] text-[#5a6a78] max-w-[380px] mx-auto mb-8 leading-relaxed font-medium">Real-time arbitrage and +EV detection across every major sportsbook.</p>
+                <p className="text-[14px] text-[#5a6a78] max-w-[380px] mx-auto mb-8 leading-relaxed font-medium">Real-time arbitrage, +EV detection, and bonus bet conversion across every major sportsbook.</p>
                 <div className="grid grid-cols-3 gap-2 max-w-[540px] mx-auto mb-7">
                   {tools.map(t => (
                     <div key={t.id} onClick={() => openTool(t.name)}
@@ -438,6 +622,8 @@ export default function Home() {
                 <span className="ml-auto">FluxOdds v1.0</span>
               </div>
             </div>
+          ) : isBonusView ? (
+            renderBonusView()
           ) : (
             <div className="flex flex-col flex-1 overflow-hidden">
               <div className="px-5 pt-3 pb-3 bg-[#0f0e0b] border-b border-[#1e1c16] flex-shrink-0">
@@ -489,7 +675,7 @@ export default function Home() {
                       <div className="flex flex-col items-center justify-center h-64 text-[#5a6a78]">
                         <div className="text-3xl opacity-30 mb-3">📈</div>
                         <div className="text-[15px] font-bold text-[#eef1f5]">No +EV bets right now</div>
-                        <div className="text-[12px] mt-1 max-w-[300px] text-center">Comparing every book against Pinnacle's de-vigged sharp lines — check back soon</div>
+                        <div className="text-[12px] mt-1 max-w-[300px] text-center">Comparing every book against Pinnacle's de-vigged sharp lines</div>
                       </div>
                     ) : filtered.map((e, i) => renderEvRow(e, i))}
                   </>
@@ -513,7 +699,7 @@ export default function Home() {
                 <span><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected · 40 books</span>
                 <span className="text-[#1e1c16]">|</span>
                 {isEvView ? <span>Fair line: Pinnacle (de-vigged)</span> : <span>Polling every 1s</span>}
-                <span className="ml-auto">{toolName} · {sortLabel}</span>
+                <span className="ml-auto">{toolName} · {isEvView ? '+EV' : 'Highest profit first'}</span>
               </div>
             </div>
           )}
@@ -583,7 +769,7 @@ export default function Home() {
     )
   }
 
-  // ─── MARKETING SITE ──────────────────────────────────────────────────────────
+  // ─── MARKETING SITE ───
   return (
     <div style={{fontFamily:"'Inter',sans-serif"}} className="bg-[#080806] text-[#eef1f5] overflow-x-hidden">
       {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-[90] backdrop-blur-sm" onClick={() => setSidebarOpen(false)}></div>}
@@ -599,7 +785,7 @@ export default function Home() {
             {name:'Prematch Arbitrage',icon:'🗓'},
             {name:'Positive EV Bets',icon:'📈',badge:'NEW'},
             {name:'Middles Finder',icon:'🎯'},
-            {name:'Free Bet Converter',icon:'🎁',badge:'PRO'},
+            {name:'Bonus Bet Converter',icon:'🎁',badge:'PRO'},
           ].map(t => (
             <button key={t.name} onClick={() => openTool(t.name)}
               className="flex items-center gap-3 w-full px-2 py-[9px] rounded-lg text-[13px] font-medium text-[#5a6a78] hover:bg-[#1a1812] hover:text-[#eef1f5] transition-all mb-[2px] border border-transparent cursor-pointer"
@@ -623,7 +809,7 @@ export default function Home() {
         <div className="mt-auto p-3 border-t border-[#1e1c16]">
           <div className="bg-orange-900/5 border border-orange-800/15 rounded-xl p-3 cursor-pointer hover:bg-orange-900/10 transition-colors">
             <div className="text-[13px] font-bold text-[#ff6b1a]">Upgrade to Pro</div>
-            <div className="text-[11px] text-[#5a6a78] mt-1 font-medium">Unlimited arbs, all sports & alerts</div>
+            <div className="text-[11px] text-[#5a6a78] mt-1 font-medium">Unlimited arbs, +EV, bonus converter, alerts</div>
             <span className="block mt-2 py-2 rounded-lg bg-[#ff6b1a] text-black text-[11px] font-black text-center">Get Pro — $75/mo</span>
           </div>
         </div>
@@ -665,14 +851,14 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 right-0 h-[280px] pointer-events-none" style={{background:'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(255,107,26,.18) 0%, rgba(255,80,0,.08) 40%, transparent 70%)'}}></div>
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 bg-orange-900/10 border border-orange-800/20 text-[#ff6b1a] px-4 py-[5px] rounded-full text-[11px] font-semibold tracking-wider uppercase mb-7">
-            <span className="w-[6px] h-[6px] rounded-full bg-emerald-400 animate-pulse inline-block"></span>Live arbs + EV — 40+ sportsbooks
+            <span className="w-[6px] h-[6px] rounded-full bg-emerald-400 animate-pulse inline-block"></span>Arbs · +EV · Bonus converter
           </div>
           <h1 className="font-black leading-[.95] tracking-tight mb-2" style={{fontSize:'clamp(48px,7vw,100px)'}}>
             FIND THE <span className="text-[#ff6b1a]">EDGE.</span><br/>
             <span className="text-[#2a2820]">BEAT THE BOOKS.</span>
           </h1>
           <p className="text-[#5a6a78] font-medium max-w-[500px] mx-auto mt-5 mb-11 leading-relaxed" style={{fontSize:'clamp(15px,1.6vw,18px)'}}>
-            FluxOdds scans every major sportsbook in real time and surfaces arbitrage and +EV opportunities before they disappear. Guaranteed math. Sharp lines from Pinnacle.
+            FluxOdds finds arbitrage opportunities, +EV bets against Pinnacle de-vigged sharp lines, and converts your bonus bets into guaranteed cash.
           </p>
           <div className="flex items-center gap-3 justify-center">
             <button onClick={launchDash} className="px-9 py-4 rounded-xl bg-[#ff6b1a] text-black text-[15px] font-black hover:bg-[#ff8c42] transition-all hover:-translate-y-[2px] border-none cursor-pointer">Launch FluxOdds →</button>
@@ -710,8 +896,8 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 mt-14 border border-[#1e1c16] rounded-xl overflow-hidden" style={{gap:'2px'}}>
           {[
             {n:'01',t:'We scan the books',d:'FluxOdds monitors DraftKings, FanDuel, BetMGM, Caesars, and 40+ more — refreshing odds every second across all major sports.'},
-            {n:'02',t:'We find the edge',d:'Our engine calculates arbitrage opportunities AND positive EV bets using Pinnacle de-vigged sharp lines as the reference.'},
-            {n:'03',t:'You place the bets',d:'Get alerted in real time. Place stakes at each sportsbook and lock in guaranteed profit, or build long-term EV with sharp value bets.'},
+            {n:'02',t:'We find the edge',d:'Arbitrage opportunities, +EV bets via Pinnacle de-vigged lines, and optimal bonus bet conversions — all calculated in real time.'},
+            {n:'03',t:'You place the bets',d:'Place stakes at each sportsbook and lock in guaranteed profit, build long-term EV, or convert promo cash into real money.'},
           ].map((s,i) => (
             <div key={i} className="p-9 bg-[#080806] hover:bg-[#0f0e0b] transition-colors group">
               <div className="text-[60px] font-black text-[#2a2820] group-hover:text-[#ff6b1a] leading-none mb-5 transition-colors">{s.n}</div>
@@ -730,10 +916,10 @@ export default function Home() {
           {[
             {icon:'⚡',t:'Live arb finder',d:'Real-time scanning across 40+ books. Arbs are surfaced the moment they appear — with profit %, exact stakes, and direct links to each book.'},
             {icon:'📈',t:'+EV bet finder',d:'Pinnacle de-vigged sharp lines as the reference. Find positive expected value bets where the math is in your favor — the strategy the pros use daily.'},
-            {icon:'🔔',t:'Instant alerts',d:'Set a minimum profit/EV threshold and get notified via email or push the instant a bet hits your criteria. Never miss a window again.'},
-            {icon:'🧮',t:'Bet size calculator',d:'Enter your bankroll and FluxOdds tells you exactly how much to place on each side to guarantee the same profit no matter what.'},
-            {icon:'🎯',t:'Middles finder',d:'Spot middle opportunities where line movement creates a chance to win both sides. Higher risk, massive upside when they hit.'},
-            {icon:'📊',t:'P&L tracker',d:'Log every bet and track your running profit across books, sports, and time periods. Know your edge. Grow your bankroll.'},
+            {icon:'🎁',t:'Bonus bet converter',d:'Got a $100 bonus bet? Turn it into ~$70-80 of guaranteed real cash with the optimal hedge strategy across 40+ sportsbooks.'},
+            {icon:'🔔',t:'Instant alerts',d:'Set a minimum profit/EV threshold and get notified via email or push the instant a bet hits your criteria.'},
+            {icon:'🎯',t:'Middles finder',d:'Spot middle opportunities where line movement creates a chance to win both sides.'},
+            {icon:'📊',t:'P&L tracker',d:'Log every bet and track your running profit across books, sports, and time periods.'},
           ].map((f,i) => (
             <div key={i} className="bg-[#080806] p-8 hover:bg-[#0f0e0b] transition-colors">
               <div className="w-[42px] h-[42px] rounded-xl bg-orange-900/10 border border-orange-800/15 flex items-center justify-center text-[18px] mb-5">{f.icon}</div>
@@ -751,10 +937,10 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-14">
           {[
             {name:'Free',price:'0',desc:'Discover FluxOdds and start finding arbs at no cost.',btn:'Get started free',btnStyle:'border border-[#1e1c16] text-[#eef1f5] hover:border-[#ff6b1a] hover:text-[#ff6b1a]',featured:false,
-              feats:['Unlimited arbs capped at 2%','+EV bets capped at 1.5%','All sports access','Basic bet calculator','Priority support'],
-              off:['No instant alerts','No middles finder','No P&L tracker']},
+              feats:['Unlimited arbs capped at 2%','+EV bets capped at 1.5%','All sports access','Basic bet calculator'],
+              off:['No bonus bet converter','No instant alerts','No middles finder','No P&L tracker']},
             {name:'Pro',price:'75',desc:'Full access for serious arbers ready to build real profit.',btn:'Try Pro Free For 3 Days',btnStyle:'bg-[#ff6b1a] text-black hover:bg-[#ff8c42]',featured:true,badge:'Most popular',
-              feats:['Unlimited arbs','Unlimited +EV bets','All sports covered','40+ sportsbooks','Instant alerts','Middles finder','Full P&L tracker','3 device limit','Cancel anytime'],off:[]},
+              feats:['Unlimited arbs','Unlimited +EV bets','Bonus bet converter','40+ sportsbooks','Instant alerts','Middles finder','Full P&L tracker','3 device limit','Cancel anytime'],off:[]},
             {name:'Pro Day Pass',price:'15',desc:'All Pro features for 24 hours. Perfect for occasional arbers.',btn:'Coming Soon',btnStyle:'border border-[#1e1c16] text-[#5a6a78]',featured:false,badge:'Coming soon',
               feats:['All Pro features','24 hour access','One-time purchase','No subscription needed'],off:[]},
           ].map((p,i) => (
@@ -798,7 +984,7 @@ export default function Home() {
         <div className="relative z-10">
           <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">Ready?</div>
           <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(36px,6vw,80px)'}}>STOP GAMBLING.<br/><span className="text-[#ff6b1a]">START WINNING.</span></h2>
-          <p className="text-[#5a6a78] text-[17px] max-w-[480px] mx-auto mb-10 leading-relaxed font-medium">Join thousands of bettors already using FluxOdds to find guaranteed profit every single day.</p>
+          <p className="text-[#5a6a78] text-[17px] max-w-[480px] mx-auto mb-10 leading-relaxed font-medium">Join thousands of bettors using FluxOdds to find guaranteed profit every day.</p>
           <div className="flex items-center gap-3 justify-center">
             <button onClick={launchDash} className="px-9 py-4 rounded-xl bg-[#ff6b1a] text-black text-[15px] font-black hover:bg-[#ff8c42] transition-all hover:-translate-y-[2px] border-none cursor-pointer">Launch FluxOdds →</button>
             <a href="#pricing" className="px-9 py-4 rounded-xl border border-[#1e1c16] text-[#eef1f5] text-[15px] font-semibold hover:border-[#ff6b1a] hover:text-[#ff6b1a] transition-all no-underline">View pricing</a>
