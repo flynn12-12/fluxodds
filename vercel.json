@@ -2,6 +2,9 @@
   "functions": {
     "app/api/cron/scan/route.js": {
       "maxDuration": 30
+    },
+    "app/api/cron/scan-middles/route.js": {
+      "maxDuration": 30
     }
   }
 }
