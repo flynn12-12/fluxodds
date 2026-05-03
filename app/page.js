@@ -90,7 +90,19 @@ export default function Home() {
   const isLiveView = toolName === 'Live Arbitrage'
   const isEvView = toolName === 'Positive EV Bets'
   const isMiddlesView = toolName === 'Middles Finder'
+  const isCalcView = toolName === 'Bet Calculator'
   const isBonusView = toolName === 'Bonus Bet Converter'
+
+  const [calcTab, setCalcTab] = useState('arb')
+  const [calcBankroll, setCalcBankroll] = useState(100)
+  const [calcOddsA, setCalcOddsA] = useState('')
+  const [calcOddsB, setCalcOddsB] = useState('')
+  const [convertInput, setConvertInput] = useState('')
+  const [convertFormat, setConvertFormat] = useState('american')
+  const [parlayLegs, setParlayLegs] = useState([{ odds: '' }, { odds: '' }])
+  const [parlayStake, setParlayStake] = useState(100)
+  const [holdOddsA, setHoldOddsA] = useState('')
+  const [holdOddsB, setHoldOddsB] = useState('')
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -403,6 +415,368 @@ export default function Home() {
     )
   }
 
+  // ---------- BET CALCULATOR HELPERS ----------
+
+  const amToDecCalc = (am) => {
+    const n = Number(am)
+    if (!Number.isFinite(n) || n === 0) return null
+    return n > 0 ? 1 + n / 100 : 1 + 100 / Math.abs(n)
+  }
+
+  const decToAmCalc = (dec) => {
+    if (!dec || dec <= 1) return null
+    return dec >= 2 ? Math.round((dec - 1) * 100) : Math.round(-100 / (dec - 1))
+  }
+
+  const fmtAmCalc = (n) => {
+    if (n == null || !Number.isFinite(n)) return '—'
+    return n > 0 ? `+${n}` : `${n}`
+  }
+
+  const calcArbResult = () => {
+    const dA = amToDecCalc(calcOddsA)
+    const dB = amToDecCalc(calcOddsB)
+    if (!dA || !dB) return null
+    const iA = 1 / dA
+    const iB = 1 / dB
+    const sum = iA + iB
+    if (sum >= 1) return { isArb: false, hold: ((sum - 1) * 100).toFixed(2) }
+    const profit = ((1 - sum) * 100).toFixed(2)
+    const stakeA = ((iA / sum) * calcBankroll).toFixed(2)
+    const stakeB = ((iB / sum) * calcBankroll).toFixed(2)
+    const payout = (calcBankroll / sum).toFixed(2)
+    const net = (payout - calcBankroll).toFixed(2)
+    return { isArb: true, profit, stakeA, stakeB, payout, net }
+  }
+
+  const calcConversion = () => {
+    const v = Number(convertInput)
+    if (!Number.isFinite(v) || v === 0) return null
+    let decimal, american, implied
+    if (convertFormat === 'american') {
+      decimal = amToDecCalc(v)
+      if (!decimal) return null
+      american = v
+      implied = (1 / decimal) * 100
+    } else if (convertFormat === 'decimal') {
+      if (v <= 1) return null
+      decimal = v
+      american = decToAmCalc(v)
+      implied = (1 / v) * 100
+    } else {
+      if (v <= 0 || v >= 100) return null
+      implied = v
+      decimal = 100 / v
+      american = decToAmCalc(decimal)
+    }
+    return {
+      american: fmtAmCalc(american),
+      decimal: decimal?.toFixed(4),
+      implied: implied?.toFixed(2),
+    }
+  }
+
+  const calcParlay = () => {
+    const decimals = parlayLegs
+      .map(l => amToDecCalc(l.odds))
+      .filter(d => d != null)
+    if (decimals.length < 2) return null
+    const combined = decimals.reduce((a, b) => a * b, 1)
+    const am = decToAmCalc(combined)
+    const payout = (parlayStake * combined).toFixed(2)
+    const net = (parlayStake * combined - parlayStake).toFixed(2)
+    const impliedProb = ((1 / combined) * 100).toFixed(2)
+    return { combined: combined.toFixed(2), american: fmtAmCalc(am), payout, net, impliedProb, legs: decimals.length }
+  }
+
+  const calcHold = () => {
+    const dA = amToDecCalc(holdOddsA)
+    const dB = amToDecCalc(holdOddsB)
+    if (!dA || !dB) return null
+    const iA = 1 / dA
+    const iB = 1 / dB
+    const sum = iA + iB
+    const hold = ((sum - 1) * 100).toFixed(2)
+    const noVigA = decToAmCalc(1 / (iA / (iA + iB - (sum - 1) * iA / sum)))
+    const noVigB = decToAmCalc(1 / (iB / (iB + iA - (sum - 1) * iB / sum)))
+    const fairProbA = ((iA / sum) * 100).toFixed(1)
+    const fairProbB = ((iB / sum) * 100).toFixed(1)
+    return { hold, impliedA: (iA * 100).toFixed(1), impliedB: (iB * 100).toFixed(1), fairProbA, fairProbB, isArb: sum < 1 }
+  }
+
+  const updateParlayLeg = (index, value) => {
+    const updated = [...parlayLegs]
+    updated[index] = { odds: value }
+    setParlayLegs(updated)
+  }
+  const addParlayLeg = () => setParlayLegs([...parlayLegs, { odds: '' }])
+  const removeParlayLeg = (index) => {
+    if (parlayLegs.length <= 2) return
+    setParlayLegs(parlayLegs.filter((_, i) => i !== index))
+  }
+
+  const calcInputClass = "bg-[#1a1812] border border-[#1e1c16] rounded-md text-[#eef1f5] px-3 py-2 text-[13px] font-medium outline-none focus:border-[#ff6b1a] w-full"
+  const calcLabelClass = "block text-[11px] font-semibold tracking-wider uppercase text-[#5a6a78] mb-2"
+
+  const renderCalcView = () => {
+    const arbResult = calcArbResult()
+    const convResult = calcConversion()
+    const parlayResult = calcParlay()
+    const holdResult = calcHold()
+
+    const tabs = [
+      { id: 'arb', label: 'Arb Calculator', icon: '⚡' },
+      { id: 'convert', label: 'Odds Converter', icon: '🔄' },
+      { id: 'parlay', label: 'Parlay Calculator', icon: '🔗' },
+      { id: 'hold', label: 'Hold %', icon: '🏦' },
+    ]
+
+    return (
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="px-5 pt-3 pb-3 bg-[#0f0e0b] border-b border-[#1e1c16] flex-shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-[22px] font-black tracking-tight">Bet Calculator</div>
+            <button onClick={() => setDashView('home')} className="border border-[#1e1c16] text-[#5a6a78] px-3 py-1 rounded-md text-[12px] font-medium hover:text-[#eef1f5] transition-all bg-transparent cursor-pointer">← Home</button>
+          </div>
+          <div className="flex items-center gap-[5px]">
+            {tabs.map(t => (
+              <button key={t.id} onClick={() => setCalcTab(t.id)}
+                className={`flex items-center gap-2 px-3 py-[6px] rounded-md text-[12px] font-medium transition-all cursor-pointer border ${calcTab === t.id ? 'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                style={{fontFamily:"'Inter',sans-serif"}}>
+                <span>{t.icon}</span>{t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5">
+          <div className="max-w-[600px] mx-auto">
+
+            {calcTab === 'arb' && (
+              <div>
+                <p className="text-[12px] text-[#5a6a78] mb-5 leading-relaxed font-medium">Enter American odds for both sides and your total bankroll. If it&apos;s an arb, we&apos;ll show exact stakes and guaranteed profit.</p>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className={calcLabelClass}>Odds A (American)</label>
+                    <input type="number" value={calcOddsA} onChange={e => setCalcOddsA(e.target.value)} placeholder="+150" className={calcInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
+                  </div>
+                  <div>
+                    <label className={calcLabelClass}>Odds B (American)</label>
+                    <input type="number" value={calcOddsB} onChange={e => setCalcOddsB(e.target.value)} placeholder="-130" className={calcInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
+                  </div>
+                </div>
+                <div className="mb-5">
+                  <label className={calcLabelClass}>Total Bankroll $</label>
+                  <input type="number" value={calcBankroll} onChange={e => setCalcBankroll(parseFloat(e.target.value) || 0)} className={calcInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
+                </div>
+
+                {arbResult && (
+                  <div className={`rounded-xl border p-5 ${arbResult.isArb ? 'bg-emerald-900/5 border-emerald-800/20' : 'bg-[#1a1812] border-[#1e1c16]'}`}>
+                    {arbResult.isArb ? (
+                      <>
+                        <div className="text-center mb-4">
+                          <div className="text-[42px] font-black text-emerald-400 leading-none">+{arbResult.profit}%</div>
+                          <div className="text-[11px] text-[#5a6a78] mt-1 uppercase tracking-wider font-medium">Guaranteed profit</div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          <div className="bg-[#0f0e0b] border border-[#1e1c16] rounded-lg p-3">
+                            <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-1">Stake A</div>
+                            <div className="text-[20px] font-black text-[#eef1f5]">${arbResult.stakeA}</div>
+                            <div className="text-[11px] text-[#ff6b1a] font-semibold mt-1">{fmtAmCalc(Number(calcOddsA))}</div>
+                          </div>
+                          <div className="bg-[#0f0e0b] border border-[#1e1c16] rounded-lg p-3">
+                            <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-1">Stake B</div>
+                            <div className="text-[20px] font-black text-[#eef1f5]">${arbResult.stakeB}</div>
+                            <div className="text-[11px] text-[#ff6b1a] font-semibold mt-1">{fmtAmCalc(Number(calcOddsB))}</div>
+                          </div>
+                        </div>
+                        <div className="flex justify-between py-2 border-t border-[#1e1c16]">
+                          <span className="text-[12px] text-[#5a6a78] font-medium">Payout</span>
+                          <span className="text-[12px] font-semibold">${arbResult.payout}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-t border-[#1e1c16]">
+                          <span className="text-[12px] text-[#5a6a78] font-medium">Net profit</span>
+                          <span className="text-[12px] font-bold text-emerald-400">+${arbResult.net}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-4">
+                        <div className="text-[28px] font-black text-red-400 leading-none">No arb</div>
+                        <div className="text-[12px] text-[#5a6a78] mt-2 font-medium">Book hold: {arbResult.hold}%</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!arbResult && calcOddsA === '' && calcOddsB === '' && (
+                  <div className="text-center py-8 text-[#5a6a78]">
+                    <div className="text-3xl opacity-30 mb-3">⚡</div>
+                    <div className="text-[13px] font-medium">Enter odds for both sides above</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {calcTab === 'convert' && (
+              <div>
+                <p className="text-[12px] text-[#5a6a78] mb-5 leading-relaxed font-medium">Convert between American odds, decimal odds, and implied probability.</p>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div>
+                    <label className={calcLabelClass}>Format</label>
+                    <select value={convertFormat} onChange={e => setConvertFormat(e.target.value)}
+                      className={calcInputClass} style={{fontFamily:"'Inter',sans-serif"}}>
+                      <option value="american">American (+150, -110)</option>
+                      <option value="decimal">Decimal (2.50, 1.91)</option>
+                      <option value="implied">Implied Prob % (40, 52.4)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={calcLabelClass}>Value</label>
+                    <input type="number" value={convertInput} onChange={e => setConvertInput(e.target.value)}
+                      placeholder={convertFormat === 'american' ? '-110' : convertFormat === 'decimal' ? '1.91' : '52.4'}
+                      className={calcInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
+                  </div>
+                </div>
+
+                {convResult && (
+                  <div className="rounded-xl border border-[#1e1c16] bg-[#1a1812] overflow-hidden">
+                    {[
+                      ['American', convResult.american],
+                      ['Decimal', convResult.decimal],
+                      ['Implied Probability', `${convResult.implied}%`],
+                    ].map(([label, val], i) => (
+                      <div key={label} className={`flex justify-between px-5 py-3 ${i < 2 ? 'border-b border-[#1e1c16]' : ''}`}>
+                        <span className="text-[13px] text-[#5a6a78] font-medium">{label}</span>
+                        <span className="text-[15px] font-bold text-[#ff6b1a]">{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!convResult && convertInput === '' && (
+                  <div className="text-center py-8 text-[#5a6a78]">
+                    <div className="text-3xl opacity-30 mb-3">🔄</div>
+                    <div className="text-[13px] font-medium">Enter a value above to convert</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {calcTab === 'parlay' && (
+              <div>
+                <p className="text-[12px] text-[#5a6a78] mb-5 leading-relaxed font-medium">Add legs to calculate combined parlay odds, payout, and implied probability. Enter American odds for each leg.</p>
+                <div className="mb-3">
+                  <label className={calcLabelClass}>Stake $</label>
+                  <input type="number" value={parlayStake} onChange={e => setParlayStake(parseFloat(e.target.value) || 0)}
+                    className={calcInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
+                </div>
+                <div className="mb-2">
+                  <label className={calcLabelClass}>Legs (American odds)</label>
+                </div>
+                {parlayLegs.map((leg, i) => (
+                  <div key={i} className="flex items-center gap-2 mb-2">
+                    <span className="text-[11px] text-[#5a6a78] font-bold w-5 text-right">{i + 1}.</span>
+                    <input type="number" value={leg.odds} onChange={e => updateParlayLeg(i, e.target.value)}
+                      placeholder={i === 0 ? '-110' : '+150'} className={`${calcInputClass} flex-1`} style={{fontFamily:"'Inter',sans-serif"}}/>
+                    {parlayLegs.length > 2 && (
+                      <button onClick={() => removeParlayLeg(i)} className="w-7 h-7 rounded-md bg-[#1a1812] border border-[#1e1c16] text-[#5a6a78] text-[14px] hover:text-red-400 hover:border-red-900 transition-all cursor-pointer flex items-center justify-center">×</button>
+                    )}
+                  </div>
+                ))}
+                <button onClick={addParlayLeg}
+                  className="mt-1 mb-5 text-[12px] font-semibold text-[#ff6b1a] hover:text-[#ff8c42] transition-colors bg-transparent border-none cursor-pointer"
+                  style={{fontFamily:"'Inter',sans-serif"}}>
+                  + Add leg
+                </button>
+
+                {parlayResult && (
+                  <div className="rounded-xl border border-orange-800/20 bg-orange-900/5 p-5">
+                    <div className="text-center mb-4">
+                      <div className="text-[36px] font-black text-[#ff6b1a] leading-none">{parlayResult.american}</div>
+                      <div className="text-[11px] text-[#5a6a78] mt-1 uppercase tracking-wider font-medium">{parlayResult.legs}-leg parlay</div>
+                    </div>
+                    {[
+                      ['Combined decimal', `${parlayResult.combined}x`],
+                      ['Payout', `$${parlayResult.payout}`],
+                      ['Net profit', `+$${parlayResult.net}`],
+                      ['Implied probability', `${parlayResult.impliedProb}%`],
+                    ].map(([label, val], i) => (
+                      <div key={label} className={`flex justify-between py-2 ${i < 3 ? 'border-b border-[#1e1c16]' : ''}`}>
+                        <span className="text-[12px] text-[#5a6a78] font-medium">{label}</span>
+                        <span className={`text-[12px] font-semibold ${label === 'Net profit' ? 'text-emerald-400' : ''}`}>{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!parlayResult && (
+                  <div className="text-center py-8 text-[#5a6a78]">
+                    <div className="text-3xl opacity-30 mb-3">🔗</div>
+                    <div className="text-[13px] font-medium">Enter odds for at least 2 legs</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {calcTab === 'hold' && (
+              <div>
+                <p className="text-[12px] text-[#5a6a78] mb-5 leading-relaxed font-medium">Enter both sides of a two-way market to see the book&apos;s hold (vig/juice) and the true fair probabilities with the juice removed.</p>
+                <div className="grid grid-cols-2 gap-3 mb-5">
+                  <div>
+                    <label className={calcLabelClass}>Side A odds (American)</label>
+                    <input type="number" value={holdOddsA} onChange={e => setHoldOddsA(e.target.value)} placeholder="-110" className={calcInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
+                  </div>
+                  <div>
+                    <label className={calcLabelClass}>Side B odds (American)</label>
+                    <input type="number" value={holdOddsB} onChange={e => setHoldOddsB(e.target.value)} placeholder="-110" className={calcInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
+                  </div>
+                </div>
+
+                {holdResult && (
+                  <div className={`rounded-xl border p-5 ${holdResult.isArb ? 'bg-emerald-900/5 border-emerald-800/20' : 'bg-[#1a1812] border-[#1e1c16]'}`}>
+                    <div className="text-center mb-4">
+                      <div className={`text-[36px] font-black leading-none ${holdResult.isArb ? 'text-emerald-400' : parseFloat(holdResult.hold) > 5 ? 'text-red-400' : 'text-[#ff6b1a]'}`}>
+                        {holdResult.isArb ? 'ARB!' : `${holdResult.hold}%`}
+                      </div>
+                      <div className="text-[11px] text-[#5a6a78] mt-1 uppercase tracking-wider font-medium">
+                        {holdResult.isArb ? 'Negative hold — arbitrage opportunity' : 'Book hold (vig)'}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-[#0f0e0b] border border-[#1e1c16] rounded-lg p-3">
+                        <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-1">Side A</div>
+                        <div className="text-[13px] font-semibold">Implied: {holdResult.impliedA}%</div>
+                        <div className="text-[13px] font-semibold text-emerald-400 mt-1">Fair: {holdResult.fairProbA}%</div>
+                      </div>
+                      <div className="bg-[#0f0e0b] border border-[#1e1c16] rounded-lg p-3">
+                        <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-1">Side B</div>
+                        <div className="text-[13px] font-semibold">Implied: {holdResult.impliedB}%</div>
+                        <div className="text-[13px] font-semibold text-emerald-400 mt-1">Fair: {holdResult.fairProbB}%</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!holdResult && holdOddsA === '' && holdOddsB === '' && (
+                  <div className="text-center py-8 text-[#5a6a78]">
+                    <div className="text-3xl opacity-30 mb-3">🏦</div>
+                    <div className="text-[13px] font-medium">Enter odds for both sides of a market</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+          </div>
+        </div>
+
+        <div className="h-[26px] flex-shrink-0 flex items-center gap-4 px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[11px] text-[#5a6a78] font-medium">
+          <span>Bet Calculator · All odds in American format</span>
+          <span className="ml-auto">FluxOdds v1.0</span>
+        </div>
+      </div>
+    )
+  }
+
   const renderMiddleRow = (m, i) => {
     return (
       <div key={m.fingerprint || i}
@@ -668,7 +1042,7 @@ export default function Home() {
           {isPro && <span className="bg-[#ff6b1a] text-black px-2 py-[2px] rounded-full text-[10px] font-black tracking-wider">PRO</span>}
         </div>
         <div className="flex items-center gap-5">
-          {!isBonusView && !isMiddlesView && (
+          {!isBonusView && !isMiddlesView && !isCalcView && (
             <>
               <div className="text-right">
                 <div className="text-[15px] font-bold text-emerald-400">{filtered.length}</div>
@@ -783,6 +1157,8 @@ export default function Home() {
                 <span className="ml-auto">FluxOdds v1.0</span>
               </div>
             </div>
+          ) : isCalcView ? (
+            renderCalcView()
           ) : isMiddlesView ? (
             renderMiddlesView()
           ) : isBonusView ? (
