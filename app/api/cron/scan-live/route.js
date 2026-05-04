@@ -11,8 +11,12 @@ export const maxDuration = 30;
 
 export async function GET(request) {
   const url = new URL(request.url);
-  const secret = url.searchParams.get('secret');
-  if (secret !== process.env.CRON_SECRET) {
+  const querySecret = url.searchParams.get('secret');
+  const authHeader = request.headers.get('authorization') || '';
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return Response.json({ error: 'CRON_SECRET not configured' }, { status: 401 });
+  const authOk = authHeader === `Bearer ${cronSecret}` || querySecret === cronSecret;
+  if (!authOk) {
     return Response.json({ error: 'unauthorized' }, { status: 401 });
   }
 
@@ -42,7 +46,6 @@ export async function GET(request) {
     fingerprint: arb.fingerprint,
     payload: arb,
     profit: arb.profit,
-    first_seen_at: now,
     last_seen_at: now,
   }));
 

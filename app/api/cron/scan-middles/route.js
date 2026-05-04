@@ -56,7 +56,6 @@ export async function GET(request) {
     fingerprint: m.fingerprint,
     payload: m,
     gap: m.gap,
-    first_seen_at: now,
     last_seen_at: now,
   }));
 
