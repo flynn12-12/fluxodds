@@ -32,10 +32,16 @@ export async function GET(request) {
   const startedAt = Date.now();
   let arbs = [];
   let eventCount = 0;
+  let scanHealthy = false;
+  let leaguesOk = 0;
+  let leaguesAttempted = 0;
   try {
     const out = await scanAllLeaguesForLiveArbs(apiKey);
     arbs = out.arbs || [];
     eventCount = out.eventCount || 0;
+    scanHealthy = out.scanHealthy === true;
+    leaguesOk = out.leaguesOk ?? 0;
+    leaguesAttempted = out.leaguesAttempted ?? 0;
   } catch (e) {
     console.error('Live scan failed:', e);
     return Response.json({ error: 'scan failed', message: e.message }, { status: 500 });
@@ -56,17 +62,25 @@ export async function GET(request) {
     if (error) console.error('Supabase upsert error:', error);
   }
 
-  // Live arbs go stale fast — prune anything not seen in 30s
-  await supabase
-    .from('live_arb_sightings')
-    .delete()
-    .lt('last_seen_at', new Date(Date.now() - 30_000).toISOString());
+  let stalePruned = null;
+  if (scanHealthy) {
+    const { error: delErr, count } = await supabase
+      .from('live_arb_sightings')
+      .delete({ count: 'exact' })
+      .lt('last_seen_at', new Date(Date.now() - 30_000).toISOString());
+    if (delErr) console.error('Live stale prune error:', delErr);
+    else stalePruned = count ?? 0;
+  }
 
   return Response.json({
     ok: true,
     scanned: eventCount,
     found: arbs.length,
     written: rows.length,
+    scanHealthy,
+    leaguesOk,
+    leaguesAttempted,
+    stalePruned,
     elapsedMs: Date.now() - startedAt,
   }, { headers: { 'Cache-Control': 'no-store' } });
 }
