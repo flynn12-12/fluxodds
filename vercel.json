@@ -11,23 +11,14 @@
     },
     "app/api/cron/scan-middles/route.js": {
       "maxDuration": 30
+    },
+    "app/api/cron/run-all-scans/route.js": {
+      "maxDuration": 60
     }
   },
   "crons": [
     {
-      "path": "/api/cron/scan",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/cron/scan-live",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/cron/scan-ev",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/cron/scan-middles",
+      "path": "/api/cron/run-all-scans",
       "schedule": "* * * * *"
     }
   ]
