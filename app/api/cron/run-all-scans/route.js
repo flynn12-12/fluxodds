@@ -22,12 +22,14 @@ export async function GET(request) {
   const ok = authHeader === `Bearer ${secret}` || querySecret === secret;
   if (!ok) return unauthorized();
 
+  const configuredBase = process.env.PUBLIC_BASE_URL;
   const proto = request.headers.get('x-forwarded-proto') || 'https';
   const host = request.headers.get('host');
-  if (!host) {
-    return Response.json({ error: 'missing Host header' }, { status: 400 });
+  const fallbackOrigin = host ? `${proto}://${host}` : null;
+  const origin = configuredBase || fallbackOrigin;
+  if (!origin) {
+    return Response.json({ error: 'no base URL available' }, { status: 400 });
   }
-  const origin = `${proto}://${host}`;
   const chainHeaders = {
     Authorization: `Bearer ${secret}`,
     [CRON_CHAIN_HEADER]: secret,
