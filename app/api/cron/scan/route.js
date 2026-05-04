@@ -74,15 +74,13 @@ export async function GET(request) {
     // Only evict when every league fetch succeeded. If any request failed, we
     // may have zero arbs from incomplete data — deleting would wipe the cache
     // and "black out" the dashboard until the next good scan.
-    let staleDeleted = 0;
     if (scanHealthy) {
       const staleCutoff = new Date(Date.now() - STALE_AFTER_MS).toISOString();
-      const { error: deleteErr, count } = await supabase
+      const { error: deleteErr } = await supabase
         .from('arb_sightings')
-        .delete({ count: 'exact' })
+        .delete()
         .lt('last_seen_at', staleCutoff);
       if (deleteErr) throw deleteErr;
-      staleDeleted = count ?? 0;
     }
 
     return Response.json({
@@ -92,7 +90,7 @@ export async function GET(request) {
       scanHealthy,
       leaguesOk,
       leaguesAttempted,
-      stalePruned: scanHealthy ? staleDeleted : null,
+      stalePruned: scanHealthy,
       durationMs: Date.now() - startedAt,
     });
   } catch (err) {
