@@ -63,7 +63,7 @@ export async function GET(request) {
   }
 
   let stalePruned = false;
-  if (scanHealthy) {
+  if (scanHealthy && rows.length > 0) {
     const { error: delErr } = await supabase
       .from('live_arb_sightings')
       .delete()
