@@ -1398,7 +1398,16 @@ export default function Home() {
             <div className="flex flex-col items-center justify-center h-64 text-[#a1a1aa]">
               <div className="text-3xl opacity-30 mb-3">🎯</div>
               <div className="text-[15px] font-bold text-[#fafafa]">No middles right now</div>
-              <div className="text-[12px] mt-1 max-w-[400px] text-center">Scanning spread and total lines across 40+ books for overlapping opportunities</div>
+              <div className="text-[12px] mt-1 max-w-[400px] text-center">
+                {middlesData.length > 0 && filteredMiddles.length === 0
+                  ? `${middlesData.length} middle${middlesData.length === 1 ? '' : 's'} hidden by your filters${hiddenBooks.length > 0 ? ' or disabled sportsbooks' : ''}.`
+                  : 'Scanning spread and total lines across 40+ books for overlapping opportunities'}
+              </div>
+              {middlesData.length > 0 && filteredMiddles.length === 0 && (
+                <button type="button" onClick={() => { setHiddenBooks([]); setSport('all'); setMinP(0); setQuery('') }} className="mt-3 border border-[#e87028]/40 text-[#e87028] px-3 py-[5px] rounded-md text-[11px] font-semibold hover:bg-[#e87028]/10 transition-all bg-transparent cursor-pointer">
+                  Reset all filters
+                </button>
+              )}
             </div>
           ) : filteredMiddles.map((m, i) => renderMiddleRow(m, i))}
         </div>
@@ -1585,10 +1594,14 @@ export default function Home() {
 
   if (view === 'dashboard') {
     let filtered = []
-    if (isLiveView) filtered = filteredLiveArbs
-    else if (isEvView) filtered = filteredEv
-    else if (isMiddlesView) filtered = filteredMiddles
-    else filtered = filteredArbs
+    let unfilteredCount = 0
+    if (isLiveView) { filtered = filteredLiveArbs; unfilteredCount = liveArbsData.length }
+    else if (isEvView) { filtered = filteredEv; unfilteredCount = evData.length }
+    else if (isMiddlesView) { filtered = filteredMiddles; unfilteredCount = middlesData.length }
+    else { filtered = filteredArbs; unfilteredCount = liveData.length }
+    const filtersHiding = unfilteredCount > 0 && filtered.length === 0
+    const hasHiddenBooks = hiddenBooks.length > 0
+    const hasActiveFilters = sport !== 'all' || minP > 0 || query !== '' || hasHiddenBooks
 
     return (
     <div style={{fontFamily:"'Inter',sans-serif"}} className="flex flex-col h-screen bg-[#09090b] text-[#fafafa] overflow-hidden">
@@ -1796,7 +1809,16 @@ export default function Home() {
                       <div className="flex flex-col items-center justify-center h-64 text-[#a1a1aa]">
                         <div className="text-3xl opacity-30 mb-3">📈</div>
                         <div className="text-[15px] font-bold text-[#fafafa]">No +EV bets right now</div>
-                        <div className="text-[12px] mt-1 max-w-[300px] text-center">Comparing every book against Pinnacle's de-vigged sharp lines</div>
+                        <div className="text-[12px] mt-1 max-w-[400px] text-center">
+                          {filtersHiding
+                            ? `${unfilteredCount} result${unfilteredCount === 1 ? '' : 's'} hidden by your filters${hasHiddenBooks ? ' or disabled sportsbooks' : ''}.`
+                            : 'Comparing every book against Pinnacle\'s de-vigged sharp lines'}
+                        </div>
+                        {filtersHiding && (
+                          <button type="button" onClick={() => { setHiddenBooks([]); setSport('all'); setMinP(0); setQuery('') }} className="mt-3 border border-[#e87028]/40 text-[#e87028] px-3 py-[5px] rounded-md text-[11px] font-semibold hover:bg-[#e87028]/10 transition-all bg-transparent cursor-pointer">
+                            Reset all filters
+                          </button>
+                        )}
                       </div>
                     ) : filtered.map((e, i) => renderEvRow(e, i))}
                   </>
@@ -1810,8 +1832,18 @@ export default function Home() {
                         <div className="text-3xl opacity-30 mb-3">{isLiveView ? '⚡' : '◎'}</div>
                         <div className="text-[15px] font-bold text-[#fafafa]">{isLiveView ? 'No live arbs right now' : 'No arbitrage opportunities right now'}</div>
                         <div className="text-[12px] mt-1 max-w-[400px] text-center">
-                          {isLiveView ? 'Live arbs appear during in-progress games and disappear within seconds. Check back during peak game hours.' : 'Scanning every 5 seconds — check back soon'}
+                          {filtersHiding
+                            ? `${unfilteredCount} result${unfilteredCount === 1 ? '' : 's'} hidden by your filters${hasHiddenBooks ? ' or disabled sportsbooks' : ''}.`
+                            : isLiveView ? 'Live arbs appear during in-progress games and disappear within seconds. Check back during peak game hours.' : 'Scanning every 5 seconds — check back soon'}
                         </div>
+                        {filtersHiding && (
+                          <button type="button" onClick={() => { setHiddenBooks([]); setSport('all'); setMinP(0); setQuery('') }} className="mt-3 border border-[#e87028]/40 text-[#e87028] px-3 py-[5px] rounded-md text-[11px] font-semibold hover:bg-[#e87028]/10 transition-all bg-transparent cursor-pointer">
+                            Reset all filters
+                          </button>
+                        )}
+                        {!filtersHiding && hasActiveFilters && unfilteredCount === 0 && (
+                          <div className="text-[11px] mt-2 text-[#71717a]">Filters active — try broadening your search</div>
+                        )}
                       </div>
                     ) : filtered.map((a, i) => renderArbRow(a, i, { live: isLiveView }))}
                   </>
@@ -1822,6 +1854,7 @@ export default function Home() {
                 <span className="flex-shrink-0"><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected</span>
                 <span className="text-[#27272a] hidden sm:inline">|</span>
                 {isEvView ? <span className="hidden sm:inline truncate">Pinnacle de-vigged</span> : isLiveView ? <span className="hidden sm:inline truncate">In-play · every 5s</span> : <span className="hidden sm:inline truncate">Polling every 1s</span>}
+                {unfilteredCount > filtered.length && <><span className="text-[#27272a] hidden sm:inline">|</span><span className="hidden sm:inline truncate text-[#e87028]">{unfilteredCount - filtered.length} hidden by filters</span></>}
                 <span className="ml-auto flex-shrink-0 truncate">{toolName}</span>
               </div>
             </div>

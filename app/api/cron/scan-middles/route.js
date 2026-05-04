@@ -47,7 +47,7 @@ export async function GET(request) {
     const out = await scanAllLeaguesForMiddles(apiKey);
     middles = out.middles || [];
     eventCount = out.eventCount || 0;
-    scanHealthy = out.scanHealthy !== false;
+    scanHealthy = out.scanHealthy === true;
   } catch (e) {
     console.error('Middles scan failed:', e);
     return Response.json({ error: 'scan failed', message: e.message }, { status: 500 });
@@ -68,7 +68,7 @@ export async function GET(request) {
     if (error) console.error('Supabase middles upsert error:', error);
   }
 
-  if (scanHealthy) {
+  if (scanHealthy && rows.length > 0) {
     await supabase
       .from('middle_sightings')
       .delete()
@@ -83,6 +83,6 @@ export async function GET(request) {
     written: rows.length,
     elapsedMs: elapsed,
     scanHealthy,
-    stalePruned: scanHealthy,
+    stalePruned: scanHealthy && rows.length > 0,
   }, { headers: { 'Cache-Control': 'no-store' } });
 }
