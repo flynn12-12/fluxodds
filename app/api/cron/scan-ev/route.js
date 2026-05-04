@@ -43,7 +43,7 @@ export async function GET(request) {
     const out = await scanAllLeaguesForEv(apiKey);
     evBets = out.evBets || [];
     eventCount = out.eventCount || 0;
-    scanHealthy = out.scanHealthy !== false;
+    scanHealthy = out.scanHealthy === true;
   } catch (e) {
     console.error('EV scan failed:', e);
     return Response.json({ error: 'scan failed', message: e.message }, { status: 500 });
@@ -64,8 +64,10 @@ export async function GET(request) {
     if (error) console.error('Supabase upsert error:', error);
   }
 
-  // Only prune when every league fetch succeeded — same rule as prematch arbs.
-  if (scanHealthy) {
+  // Only prune when every league fetch succeeded AND we found at least one row
+  // this run. Without the rows guard a healthy zero-result scan never upserts,
+  // so every cached row still has an old last_seen_at and the delete wipes the table.
+  if (scanHealthy && rows.length > 0) {
     await supabase
       .from('ev_sightings')
       .delete()
@@ -80,6 +82,6 @@ export async function GET(request) {
     written: rows.length,
     elapsedMs: elapsed,
     scanHealthy,
-    stalePruned: scanHealthy,
+    stalePruned: scanHealthy && rows.length > 0,
   }, { headers: { 'Cache-Control': 'no-store' } });
 }
