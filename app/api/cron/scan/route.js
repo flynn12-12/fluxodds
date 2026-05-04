@@ -6,6 +6,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { scanAllLeagues } from '@/lib/arbScanner';
+import { assertProductionCronChild } from '@/lib/cronChildAuth';
 
 // How long an arb can be missing from a scan before we evict it.
 // 30s gives us breathing room for transient SGO blips.
@@ -29,6 +30,9 @@ export async function GET(request) {
   const ok =
     authHeader === `Bearer ${secret}` || querySecret === secret;
   if (!ok) return unauthorized();
+
+  const chainBlock = assertProductionCronChild(request);
+  if (chainBlock) return chainBlock;
 
   const apiKey = process.env.SPORTSGAMEODDS_API_KEY;
   if (!apiKey) {

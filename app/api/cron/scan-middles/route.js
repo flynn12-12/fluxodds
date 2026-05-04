@@ -5,6 +5,7 @@
 
 import { scanAllLeaguesForMiddles } from '@/lib/middlesScanner';
 import { createClient } from '@supabase/supabase-js';
+import { assertProductionCronChild } from '@/lib/cronChildAuth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -22,6 +23,9 @@ export async function GET(request) {
   if (!ok) {
     return Response.json({ error: 'unauthorized' }, { status: 401 });
   }
+
+  const chainBlock = assertProductionCronChild(request);
+  if (chainBlock) return chainBlock;
 
   const apiKey = process.env.SPORTSGAMEODDS_API_KEY;
   if (!apiKey) {

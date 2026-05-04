@@ -3,6 +3,8 @@
 // Runs prematch arbs, live arbs, EV, and middles one after another so we never
 // burst 4×7 parallel SportsGameOdds requests (which triggers 429 rate limits).
 
+import { CRON_CHAIN_HEADER } from '@/lib/cronChildAuth';
+
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
@@ -26,7 +28,10 @@ export async function GET(request) {
     return Response.json({ error: 'missing Host header' }, { status: 400 });
   }
   const origin = `${proto}://${host}`;
-  const auth = { Authorization: `Bearer ${secret}` };
+  const chainHeaders = {
+    Authorization: `Bearer ${secret}`,
+    [CRON_CHAIN_HEADER]: secret,
+  };
 
   const paths = ['/api/cron/scan', '/api/cron/scan-live', '/api/cron/scan-ev', '/api/cron/scan-middles'];
   const results = [];
@@ -36,7 +41,7 @@ export async function GET(request) {
     const t0 = Date.now();
     try {
       const res = await fetch(`${origin}${path}`, {
-        headers: { ...auth },
+        headers: chainHeaders,
         cache: 'no-store',
       });
       let body = null;
