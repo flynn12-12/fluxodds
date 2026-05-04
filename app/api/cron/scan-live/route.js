@@ -56,11 +56,13 @@ export async function GET(request) {
     if (error) console.error('Supabase upsert error:', error);
   }
 
-  // Live arbs go stale fast — prune anything not seen in 30s
-  await supabase
-    .from('live_arb_sightings')
-    .delete()
-    .lt('last_seen_at', new Date(Date.now() - 30_000).toISOString());
+  // Live arbs go stale fast — prune only after a scan that returned rows.
+  if (arbs.length > 0) {
+    await supabase
+      .from('live_arb_sightings')
+      .delete()
+      .lt('last_seen_at', new Date(Date.now() - 30_000).toISOString());
+  }
 
   return Response.json({
     ok: true,

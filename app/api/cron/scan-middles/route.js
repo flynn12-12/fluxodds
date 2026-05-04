@@ -66,11 +66,13 @@ export async function GET(request) {
     if (error) console.error('Supabase middles upsert error:', error);
   }
 
-  // Prune stale middles older than 60s
-  await supabase
-    .from('middle_sightings')
-    .delete()
-    .lt('last_seen_at', new Date(Date.now() - 60_000).toISOString());
+  // Only prune when we got a real non-empty result (empty scan = transient failure).
+  if (middles.length > 0) {
+    await supabase
+      .from('middle_sightings')
+      .delete()
+      .lt('last_seen_at', new Date(Date.now() - 10 * 60_000).toISOString());
+  }
 
   const elapsed = Date.now() - startedAt;
   return Response.json({

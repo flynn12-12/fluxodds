@@ -1,18 +1,4 @@
 {
-  "functions": {
-    "app/api/cron/scan/route.js": {
-      "maxDuration": 30
-    },
-    "app/api/cron/scan-live/route.js": {
-      "maxDuration": 30
-    },
-    "app/api/cron/scan-ev/route.js": {
-      "maxDuration": 30
-    },
-    "app/api/cron/scan-middles/route.js": {
-      "maxDuration": 30
-    }
-  },
   "crons": [
     {
       "path": "/api/cron/scan",
@@ -28,7 +14,21 @@
     },
     {
       "path": "/api/cron/scan-middles",
-      "schedule": "* * * * *"
+      "schedule": "*/5 * * * *"
     }
-  ]
+  ],
+  "functions": {
+    "app/api/cron/scan/route.js": {
+      "maxDuration": 30
+    },
+    "app/api/cron/scan-live/route.js": {
+      "maxDuration": 30
+    },
+    "app/api/cron/scan-ev/route.js": {
+      "maxDuration": 30
+    },
+    "app/api/cron/scan-middles/route.js": {
+      "maxDuration": 30
+    }
+  }
 }

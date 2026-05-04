@@ -62,11 +62,13 @@ export async function GET(request) {
     if (error) console.error('Supabase upsert error:', error);
   }
 
-  // Stale rows older than 60s get pruned from the cache
-  await supabase
-    .from('ev_sightings')
-    .delete()
-    .lt('last_seen_at', new Date(Date.now() - 60_000).toISOString());
+  // Only prune when we got a real non-empty result (empty scan = transient failure).
+  if (evBets.length > 0) {
+    await supabase
+      .from('ev_sightings')
+      .delete()
+      .lt('last_seen_at', new Date(Date.now() - 10 * 60_000).toISOString());
+  }
 
   const elapsed = Date.now() - startedAt;
   return Response.json({
