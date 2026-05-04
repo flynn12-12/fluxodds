@@ -71,10 +71,11 @@ export async function GET(request) {
       if (upsertErr) throw upsertErr;
     }
 
-    // Only evict when every league fetch succeeded. If any request failed, we
-    // may have zero arbs from incomplete data — deleting would wipe the cache
-    // and "black out" the dashboard until the next good scan.
-    if (scanHealthy) {
+    // Only evict when every league fetch succeeded AND we saw at least one arb this
+    // run. If the scan is "healthy" but returns zero rows, we did not upsert anything
+    // — every cached row still has an old last_seen_at, so a time-based delete would
+    // wipe the entire table (e.g. cron interval > STALE_AFTER_MS).
+    if (scanHealthy && arbs.length > 0) {
       const staleCutoff = new Date(Date.now() - STALE_AFTER_MS).toISOString();
       const { error: deleteErr } = await supabase
         .from('arb_sightings')
