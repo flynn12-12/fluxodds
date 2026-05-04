@@ -88,7 +88,14 @@ export async function GET(request) {
         .lt('last_seen_at', staleCutoff);
       if (deleteErr) throw deleteErr;
     }
-
+console.log('[arb-scan]', JSON.stringify({
+      eventCount,
+      arbsFound: arbs.length,
+      scanHealthy,
+      leaguesOk,
+      leaguesAttempted,
+      first3: arbs.slice(0, 3),
+    }));
     return Response.json({
       ok: true,
       scanned: eventCount,
