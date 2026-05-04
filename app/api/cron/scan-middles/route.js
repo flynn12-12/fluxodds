@@ -15,12 +15,14 @@ export async function GET(request) {
   const authHeader = request.headers.get('authorization') || '';
   const cronSecret = process.env.CRON_SECRET;
 
-  if (!cronSecret) {
-    return Response.json({ error: 'CRON_SECRET not configured' }, { status: 401 });
-  }
-  const ok = authHeader === `Bearer ${cronSecret}` || secret === cronSecret;
-  if (!ok) {
-    return Response.json({ error: 'unauthorized' }, { status: 401 });
+  if (process.env.NODE_ENV !== 'development') {
+    if (!cronSecret) {
+      return Response.json({ error: 'CRON_SECRET not configured' }, { status: 401 });
+    }
+    const ok = authHeader === `Bearer ${cronSecret}` || secret === cronSecret;
+    if (!ok) {
+      return Response.json({ error: 'unauthorized' }, { status: 401 });
+    }
   }
 
   const apiKey = process.env.SPORTSGAMEODDS_API_KEY;
@@ -56,7 +58,6 @@ export async function GET(request) {
     fingerprint: m.fingerprint,
     payload: m,
     gap: m.gap,
-    first_seen_at: now,
     last_seen_at: now,
   }));
 

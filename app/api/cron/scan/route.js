@@ -25,10 +25,11 @@ export async function GET(request) {
   const querySecret = url.searchParams.get('secret');
   const secret = process.env.CRON_SECRET;
 
-  if (!secret) return unauthorized('CRON_SECRET not configured');
-  const ok =
-    authHeader === `Bearer ${secret}` || querySecret === secret;
-  if (!ok) return unauthorized();
+  if (process.env.NODE_ENV !== 'development') {
+    if (!secret) return unauthorized('CRON_SECRET not configured');
+    const ok = authHeader === `Bearer ${secret}` || querySecret === secret;
+    if (!ok) return unauthorized();
+  }
 
   const apiKey = process.env.SPORTSGAMEODDS_API_KEY;
   if (!apiKey) {
