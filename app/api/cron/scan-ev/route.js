@@ -5,16 +5,24 @@
 
 import { scanAllLeaguesForEv } from '@/lib/evScanner';
 import { createClient } from '@supabase/supabase-js';
+import { assertProductionCronChild } from '@/lib/cronChildAuth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 export async function GET(request) {
   const url = new URL(request.url);
-  const secret = url.searchParams.get('secret');
-  if (secret !== process.env.CRON_SECRET) {
+  const querySecret = url.searchParams.get('secret');
+  const authHeader = request.headers.get('authorization') || '';
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return Response.json({ error: 'CRON_SECRET not configured' }, { status: 401 });
+  const authOk = authHeader === `Bearer ${cronSecret}` || querySecret === cronSecret;
+  if (!authOk) {
     return Response.json({ error: 'unauthorized' }, { status: 401 });
   }
+
+  const chainBlock = assertProductionCronChild(request);
+  if (chainBlock) return chainBlock;
 
   const apiKey = process.env.SPORTSGAMEODDS_API_KEY;
   if (!apiKey) {
@@ -34,10 +42,12 @@ export async function GET(request) {
   const startedAt = Date.now();
   let evBets = [];
   let eventCount = 0;
+  let scanHealthy = false;
   try {
     const out = await scanAllLeaguesForEv(apiKey);
     evBets = out.evBets || [];
     eventCount = out.eventCount || 0;
+    scanHealthy = out.scanHealthy === true;
   } catch (e) {
     console.error('EV scan failed:', e);
     return Response.json({ error: 'scan failed', message: e.message }, { status: 500 });
@@ -48,11 +58,9 @@ export async function GET(request) {
     fingerprint: b.fingerprint,
     payload: b,
     ev: b.ev,
-    first_seen_at: now,
     last_seen_at: now,
   }));
 
-  // Upsert: keep first_seen_at on existing rows, refresh last_seen_at + payload
   if (rows.length > 0) {
     const { error } = await supabase
       .from('ev_sightings')
@@ -60,13 +68,15 @@ export async function GET(request) {
     if (error) console.error('Supabase upsert error:', error);
   }
 
-  // Update last_seen_at for currently-seen fingerprints (so we know which are stale)
-  const seen = new Set(rows.map(r => r.fingerprint));
-  // Stale rows older than 60s get pruned from the cache
-  await supabase
-    .from('ev_sightings')
-    .delete()
-    .lt('last_seen_at', new Date(Date.now() - 60_000).toISOString());
+  // Only prune when every league fetch succeeded AND we found at least one row
+  // this run. Without the rows guard a healthy zero-result scan never upserts,
+  // so every cached row still has an old last_seen_at and the delete wipes the table.
+  if (scanHealthy && rows.length > 0) {
+    await supabase
+      .from('ev_sightings')
+      .delete()
+      .lt('last_seen_at', new Date(Date.now() - 60_000).toISOString());
+  }
 
   const elapsed = Date.now() - startedAt;
   return Response.json({
@@ -75,5 +85,7 @@ export async function GET(request) {
     found: evBets.length,
     written: rows.length,
     elapsedMs: elapsed,
+    scanHealthy,
+    stalePruned: scanHealthy && rows.length > 0,
   }, { headers: { 'Cache-Control': 'no-store' } });
 }

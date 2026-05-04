@@ -6,6 +6,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { scanAllLeagues } from '@/lib/arbScanner';
+import { assertProductionCronChild } from '@/lib/cronChildAuth';
 
 // How long an arb can be missing from a scan before we evict it.
 // 30s gives us breathing room for transient SGO blips.
@@ -31,6 +32,9 @@ export async function GET(request) {
     if (!ok) return unauthorized();
   }
 
+  const chainBlock = assertProductionCronChild(request);
+  if (chainBlock) return chainBlock;
+
   const apiKey = process.env.SPORTSGAMEODDS_API_KEY;
   if (!apiKey) {
     return Response.json({ error: 'SPORTSGAMEODDS_API_KEY not configured' }, { status: 500 });
@@ -45,7 +49,8 @@ export async function GET(request) {
   const startedAt = Date.now();
 
   try {
-    const { arbs, eventCount } = await scanAllLeagues(apiKey);
+    const { arbs, eventCount, scanHealthy, leaguesOk, leaguesAttempted } =
+      await scanAllLeagues(apiKey);
     const now = new Date().toISOString();
 
     if (arbs.length > 0) {
@@ -71,18 +76,27 @@ export async function GET(request) {
       if (upsertErr) throw upsertErr;
     }
 
-    // Evict stale arbs (haven't been seen in STALE_AFTER_MS).
-    const staleCutoff = new Date(Date.now() - STALE_AFTER_MS).toISOString();
-    const { error: deleteErr } = await supabase
-      .from('arb_sightings')
-      .delete()
-      .lt('last_seen_at', staleCutoff);
-    if (deleteErr) throw deleteErr;
+    // Only evict when every league fetch succeeded AND we saw at least one arb this
+    // run. If the scan is "healthy" but returns zero rows, we did not upsert anything
+    // — every cached row still has an old last_seen_at, so a time-based delete would
+    // wipe the entire table (e.g. cron interval > STALE_AFTER_MS).
+    if (scanHealthy && arbs.length > 0) {
+      const staleCutoff = new Date(Date.now() - STALE_AFTER_MS).toISOString();
+      const { error: deleteErr } = await supabase
+        .from('arb_sightings')
+        .delete()
+        .lt('last_seen_at', staleCutoff);
+      if (deleteErr) throw deleteErr;
+    }
 
     return Response.json({
       ok: true,
       scanned: eventCount,
       arbsFound: arbs.length,
+      scanHealthy,
+      leaguesOk,
+      leaguesAttempted,
+      stalePruned: scanHealthy,
       durationMs: Date.now() - startedAt,
     });
   } catch (err) {

@@ -5,6 +5,7 @@
 
 import { scanAllLeaguesForMiddles } from '@/lib/middlesScanner';
 import { createClient } from '@supabase/supabase-js';
+import { assertProductionCronChild } from '@/lib/cronChildAuth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -25,6 +26,9 @@ export async function GET(request) {
     }
   }
 
+  const chainBlock = assertProductionCronChild(request);
+  if (chainBlock) return chainBlock;
+
   const apiKey = process.env.SPORTSGAMEODDS_API_KEY;
   if (!apiKey) {
     return Response.json({ error: 'no api key' }, { status: 500 });
@@ -43,11 +47,13 @@ export async function GET(request) {
   const startedAt = Date.now();
   let middles = [];
   let eventCount = 0;
+  let scanHealthy = false;
 
   try {
     const out = await scanAllLeaguesForMiddles(apiKey);
     middles = out.middles || [];
     eventCount = out.eventCount || 0;
+    scanHealthy = out.scanHealthy === true;
   } catch (e) {
     console.error('Middles scan failed:', e);
     return Response.json({ error: 'scan failed', message: e.message }, { status: 500 });
@@ -68,11 +74,12 @@ export async function GET(request) {
     if (error) console.error('Supabase middles upsert error:', error);
   }
 
-  // Prune stale middles older than 60s
-  await supabase
-    .from('middle_sightings')
-    .delete()
-    .lt('last_seen_at', new Date(Date.now() - 60_000).toISOString());
+  if (scanHealthy && rows.length > 0) {
+    await supabase
+      .from('middle_sightings')
+      .delete()
+      .lt('last_seen_at', new Date(Date.now() - 60_000).toISOString());
+  }
 
   const elapsed = Date.now() - startedAt;
   return Response.json({
@@ -81,5 +88,7 @@ export async function GET(request) {
     found: middles.length,
     written: rows.length,
     elapsedMs: elapsed,
+    scanHealthy,
+    stalePruned: scanHealthy && rows.length > 0,
   }, { headers: { 'Cache-Control': 'no-store' } });
 }
