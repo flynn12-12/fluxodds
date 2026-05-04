@@ -23,7 +23,7 @@ const BONUS_BOOKS = [
 ]
 
 const SPORT_TAG = 'bg-[#1e1c16] text-[#7a8a96] border border-[#2a2820] text-[9px] font-semibold px-[6px] py-[1px] rounded'
-const MARKET_TAG = 'bg-amber-950/10 text-[#d4915c] border border-amber-900/20 text-[9px] font-semibold px-[6px] py-[1px] rounded'
+const MARKET_TAG = 'bg-orange-950/10 text-[#e87028] border border-orange-900/20 text-[9px] font-semibold px-[6px] py-[1px] rounded'
 const LIVE_TAG = 'bg-red-900/15 text-red-400 border border-red-800/30 text-[9px] font-bold px-[6px] py-[1px] rounded uppercase tracking-wider'
 
 const cleanBet = (betStr, bookmaker) => {
@@ -389,7 +389,7 @@ export default function Home() {
     return [
       <div key={a.fingerprint || i}
         onClick={() => !blurred ? setSelectedArb(a) : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))}
-        className={`arb-row border-b border-[#1e1c16] items-center transition-colors ${blurred ? 'cursor-pointer hover:bg-amber-950/5' : 'cursor-pointer hover:bg-[#0f0e0b]'} hidden md:grid px-5 py-[12px]`}
+        className={`arb-row border-b border-[#1e1c16] items-center transition-colors ${blurred ? 'cursor-pointer hover:bg-orange-950/5' : 'cursor-pointer hover:bg-[#0f0e0b]'} hidden md:grid px-5 py-[12px]`}
         style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 90px 100px'}}>
         <div>
           <div className="text-[13px] font-semibold mb-[4px]">{a.game}</div>
@@ -406,12 +406,12 @@ export default function Home() {
         <div className={blurred ? 'relative' : ''}>
           <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bA}</div>
           <div className={`text-[13px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betA, a.bA)}</div>
-          <div className={`text-[12px] text-[#d4915c] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oA}</div>
+          <div className={`text-[12px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oA}</div>
         </div>
         <div className={blurred ? 'relative' : ''}>
           <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bB}</div>
           <div className={`text-[13px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betB, a.bB)}</div>
-          <div className={`text-[12px] text-[#d4915c] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oB}</div>
+          <div className={`text-[12px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oB}</div>
         </div>
         <div>
           <div className="text-[18px] font-black text-emerald-400 leading-none">+{a.profit}%</div>
@@ -419,7 +419,7 @@ export default function Home() {
         </div>
         {blurred ? (
           <div className="flex items-center justify-end">
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#d4915c] bg-amber-950/10 border border-amber-900/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#e87028] bg-orange-950/10 border border-orange-900/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
           </div>
         ) : (
           <div className="text-[12px] text-[#7a8a96] font-medium">${a.sA} / ${a.sB}</div>
@@ -427,7 +427,7 @@ export default function Home() {
       </div>,
       <div key={`m-${a.fingerprint || i}`}
         onClick={() => !blurred ? setSelectedArb(a) : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))}
-        className={`md:hidden flex flex-col gap-2 px-4 py-3 border-b border-[#1e1c16] transition-colors ${blurred ? 'cursor-pointer hover:bg-amber-950/5' : 'cursor-pointer hover:bg-[#0f0e0b]'}`}>
+        className={`md:hidden flex flex-col gap-2 px-4 py-3 border-b border-[#1e1c16] transition-colors ${blurred ? 'cursor-pointer hover:bg-orange-950/5' : 'cursor-pointer hover:bg-[#0f0e0b]'}`}>
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
             <div className="text-[13px] font-semibold mb-1 truncate">{a.game}</div>
@@ -446,17 +446,17 @@ export default function Home() {
           <div className={`flex-1 bg-[#0f0e0b] rounded-lg p-2 ${blurred ? 'relative' : ''}`}>
             <div className="text-[9px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bA}</div>
             <div className={`text-[12px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betA, a.bA)}</div>
-            <div className={`text-[11px] text-[#d4915c] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oA}</div>
+            <div className={`text-[11px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oA}</div>
           </div>
           <div className={`flex-1 bg-[#0f0e0b] rounded-lg p-2 ${blurred ? 'relative' : ''}`}>
             <div className="text-[9px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bB}</div>
             <div className={`text-[12px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betB, a.bB)}</div>
-            <div className={`text-[11px] text-[#d4915c] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oB}</div>
+            <div className={`text-[11px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oB}</div>
           </div>
         </div>
         {blurred ? (
           <div className="flex justify-center">
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#d4915c] bg-amber-950/10 border border-amber-900/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#e87028] bg-orange-950/10 border border-orange-900/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
           </div>
         ) : (
           <div className="text-[11px] text-[#5a6a78] font-medium">Stakes: ${a.sA} / ${a.sB}</div>
@@ -470,7 +470,7 @@ export default function Home() {
     return [
       <div key={e.fingerprint || i}
         onClick={() => !blurred ? null : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))}
-        className={`hidden md:grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors ${blurred ? 'cursor-pointer hover:bg-amber-950/5' : 'hover:bg-[#0f0e0b]'}`}
+        className={`hidden md:grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors ${blurred ? 'cursor-pointer hover:bg-orange-950/5' : 'hover:bg-[#0f0e0b]'}`}
         style={{gridTemplateColumns:'1.6fr 1.8fr 1fr 80px 80px 80px'}}>
         <div>
           <div className="text-[13px] font-semibold mb-[4px]">{e.game}</div>
@@ -485,14 +485,14 @@ export default function Home() {
           <div className={`text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{e.bookmaker}</div>
         </div>
         <div className={blurred ? 'blur-sm select-none' : ''}>
-          <div className="text-[14px] font-bold text-[#d4915c]">{e.odds}</div>
+          <div className="text-[14px] font-bold text-[#e87028]">{e.odds}</div>
           <div className="text-[10px] text-[#5a6a78] font-medium mt-[1px]">Fair: {e.fairOdds}</div>
         </div>
         <div className="text-[18px] font-black text-emerald-400">+{e.ev}%</div>
         <div className="text-[12px] text-[#eef1f5] font-medium">{e.winProb}%</div>
         {blurred ? (
           <div className="flex items-center justify-end">
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#d4915c] bg-amber-950/10 border border-amber-900/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#e87028] bg-orange-950/10 border border-orange-900/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
           </div>
         ) : (
           renderRowAge(e)
@@ -500,7 +500,7 @@ export default function Home() {
       </div>,
       <div key={`m-${e.fingerprint || i}`}
         onClick={() => !blurred ? null : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))}
-        className={`md:hidden flex flex-col gap-2 px-4 py-3 border-b border-[#1e1c16] transition-colors ${blurred ? 'cursor-pointer hover:bg-amber-950/5' : 'hover:bg-[#0f0e0b]'}`}>
+        className={`md:hidden flex flex-col gap-2 px-4 py-3 border-b border-[#1e1c16] transition-colors ${blurred ? 'cursor-pointer hover:bg-orange-950/5' : 'hover:bg-[#0f0e0b]'}`}>
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
             <div className="text-[13px] font-semibold mb-1 truncate">{e.game}</div>
@@ -519,14 +519,14 @@ export default function Home() {
           <div className={`text-[12px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{e.bet}</div>
           <div className="flex items-center gap-3 mt-1">
             <div className={`text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide ${blurred ? 'blur-sm select-none' : ''}`}>{e.bookmaker}</div>
-            <div className={`text-[12px] text-[#d4915c] font-bold ${blurred ? 'blur-sm select-none' : ''}`}>{e.odds}</div>
+            <div className={`text-[12px] text-[#e87028] font-bold ${blurred ? 'blur-sm select-none' : ''}`}>{e.odds}</div>
             <div className={`text-[10px] text-[#5a6a78] font-medium ${blurred ? 'blur-sm select-none' : ''}`}>Fair: {e.fairOdds}</div>
             <div className="text-[10px] text-[#eef1f5] font-medium">Win: {e.winProb}%</div>
           </div>
         </div>
         {blurred && (
           <div className="flex justify-center">
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#d4915c] bg-amber-950/10 border border-amber-900/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#e87028] bg-orange-950/10 border border-orange-900/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
           </div>
         )}
       </div>
@@ -615,7 +615,7 @@ export default function Home() {
     return { totalProfit, totalStaked, wins, losses, pending, roi, byBook, bySport, total: pnlBets.length }
   })()
 
-  const pnlInputClass = "bg-[#1a1812] border border-[#1e1c16] rounded-md text-[#eef1f5] px-3 py-2 text-[13px] font-medium outline-none focus:border-[#d4915c] w-full"
+  const pnlInputClass = "bg-[#1a1812] border border-[#1e1c16] rounded-md text-[#eef1f5] px-3 py-2 text-[13px] font-medium outline-none focus:border-[#e87028] w-full"
   const pnlLabelClass = "block text-[11px] font-semibold tracking-wider uppercase text-[#5a6a78] mb-2"
 
   const renderPnlView = () => {
@@ -627,7 +627,7 @@ export default function Home() {
           <p className="text-[14px] text-[#5a6a78] max-w-[420px] mb-6 font-medium leading-relaxed">
             Log every bet and track your running profit across books, sports, and time. Available exclusively on the Pro plan.
           </p>
-          <button onClick={handleCheckout} className="px-8 py-3 rounded-xl bg-[#d4915c] text-black text-[14px] font-black hover:bg-[#e0a678] transition-all border-none cursor-pointer">
+          <button onClick={handleCheckout} className="px-8 py-3 rounded-xl bg-[#e87028] text-black text-[14px] font-black hover:bg-[#ff9a4d] transition-all border-none cursor-pointer">
             Get Pro — $75/mo →
           </button>
         </div>
@@ -640,7 +640,7 @@ export default function Home() {
             <div className="text-[18px] md:text-[22px] font-black tracking-tight">P&amp;L Tracker</div>
             <div className="flex items-center gap-2">
               <button onClick={() => { setPnlEditId(null); setPnlForm({ game: '', bookmaker: '', betType: 'arb', odds: '', stake: '', result: 'pending', profit: '', sport: 'nba', notes: '' }); setPnlFormOpen(!pnlFormOpen) }}
-                className="px-3 md:px-4 py-[6px] rounded-md bg-[#d4915c] text-black text-[11px] md:text-[12px] font-black hover:bg-[#e0a678] transition-all border-none cursor-pointer">
+                className="px-3 md:px-4 py-[6px] rounded-md bg-[#e87028] text-black text-[11px] md:text-[12px] font-black hover:bg-[#ff9a4d] transition-all border-none cursor-pointer">
                 {pnlFormOpen ? 'Cancel' : '+ Log bet'}
               </button>
               <button onClick={() => setDashView('home')} className="border border-[#1e1c16] text-[#5a6a78] px-2 md:px-3 py-[6px] rounded-md text-[11px] md:text-[12px] font-medium hover:text-[#eef1f5] transition-all bg-transparent cursor-pointer">← Home</button>
@@ -654,7 +654,7 @@ export default function Home() {
               [`${pnlStats.roi}%`, 'ROI', parseFloat(pnlStats.roi) >= 0 ? 'text-emerald-400' : 'text-[#eef1f5]'],
               [`${pnlStats.wins}W / ${pnlStats.losses}L`, 'Record', 'text-[#eef1f5]'],
               [`$${pnlStats.totalStaked.toFixed(2)}`, 'Total staked', 'text-[#eef1f5]'],
-              [`${pnlStats.pending}`, 'Pending', 'text-[#d4915c]'],
+              [`${pnlStats.pending}`, 'Pending', 'text-[#e87028]'],
             ].map(([val, label, color], i) => (
               <div key={i} className="bg-[#1a1812] border border-[#1e1c16] rounded-lg p-3 text-center">
                 <div className={`text-[16px] font-black leading-none ${color}`}>{val}</div>
@@ -689,7 +689,7 @@ export default function Home() {
           <div className="flex items-center gap-[4px] md:gap-[5px] flex-wrap">
             {['all', 'won', 'lost', 'pending', 'void'].map(f => (
               <button key={f} onClick={() => setPnlFilter(f)}
-                className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${pnlFilter === f ? 'bg-amber-950/10 border-amber-900/25 text-[#d4915c]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${pnlFilter === f ? 'bg-orange-950/10 border-orange-900/25 text-[#e87028]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
                 style={{fontFamily:"'Inter',sans-serif"}}>
                 {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
               </button>
@@ -697,7 +697,7 @@ export default function Home() {
             <div className="w-px h-4 bg-[#1e1c16] mx-[2px] md:mx-1 hidden sm:block"></div>
             {['all', 'nba', 'nfl', 'mlb', 'nhl', 'epl', 'mls', 'atp'].map(s => (
               <button key={s} onClick={() => setPnlSportFilter(s)}
-                className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${pnlSportFilter === s ? 'bg-amber-950/10 border-amber-900/25 text-[#d4915c]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${pnlSportFilter === s ? 'bg-orange-950/10 border-orange-900/25 text-[#e87028]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
                 style={{fontFamily:"'Inter',sans-serif"}}>
                 {s === 'all' ? 'All' : s.toUpperCase()}
               </button>
@@ -766,7 +766,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={savePnlBet} className="px-5 py-2 rounded-md bg-[#d4915c] text-black text-[13px] font-black hover:bg-[#e0a678] transition-all border-none cursor-pointer">
+                <button onClick={savePnlBet} className="px-5 py-2 rounded-md bg-[#e87028] text-black text-[13px] font-black hover:bg-[#ff9a4d] transition-all border-none cursor-pointer">
                   {pnlEditId ? 'Update bet' : 'Save bet'}
                 </button>
                 <button onClick={() => { setPnlFormOpen(false); setPnlEditId(null) }} className="px-5 py-2 rounded-md bg-transparent border border-[#1e1c16] text-[#5a6a78] text-[13px] font-medium hover:text-[#eef1f5] transition-all cursor-pointer">Cancel</button>
@@ -781,7 +781,7 @@ export default function Home() {
 
           {pnlLoading ? (
             <div className="flex flex-col items-center justify-center py-16">
-              <div className="w-8 h-8 border-2 border-[#d4915c] border-t-transparent rounded-full animate-spin mb-3"></div>
+              <div className="w-8 h-8 border-2 border-[#e87028] border-t-transparent rounded-full animate-spin mb-3"></div>
               <div className="text-[13px] text-[#5a6a78] font-medium">Loading bets...</div>
             </div>
           ) : pnlFiltered.length === 0 ? (
@@ -793,7 +793,7 @@ export default function Home() {
               </div>
             </div>
           ) : pnlFiltered.map((b, i) => {
-            const resultColors = { won: 'text-emerald-400 bg-emerald-900/10 border-emerald-800/25', lost: 'text-red-400 bg-red-900/10 border-red-800/25', pending: 'text-[#d4915c] bg-amber-950/10 border-amber-900/25', void: 'text-[#5a6a78] bg-[#1a1812] border-[#1e1c16]' }
+            const resultColors = { won: 'text-emerald-400 bg-emerald-900/10 border-emerald-800/25', lost: 'text-red-400 bg-red-900/10 border-red-800/25', pending: 'text-[#e87028] bg-orange-950/10 border-orange-900/25', void: 'text-[#5a6a78] bg-[#1a1812] border-[#1e1c16]' }
             const profitColor = (b.profit || 0) > 0 ? 'text-emerald-400' : (b.profit || 0) < 0 ? 'text-red-400' : 'text-[#5a6a78]'
             return [
               <div key={b.id || i} className="hidden md:grid px-5 py-[10px] border-b border-[#1e1c16] items-center hover:bg-[#0f0e0b] transition-colors" style={{gridTemplateColumns:'1.3fr 0.8fr 0.7fr 0.6fr 0.6fr 0.7fr 0.6fr 60px'}}>
@@ -806,7 +806,7 @@ export default function Home() {
                 </div>
                 <div className="text-[12px] text-[#7a8a96] font-medium">{b.bookmaker || '—'}</div>
                 <div><span className="text-[10px] font-semibold px-[6px] py-[2px] rounded bg-[#1a1812] border border-[#1e1c16] text-[#7a8a96] uppercase">{b.bet_type || '—'}</span></div>
-                <div className="text-[12px] text-[#d4915c] font-semibold">{b.odds != null ? (b.odds > 0 ? `+${b.odds}` : b.odds) : '—'}</div>
+                <div className="text-[12px] text-[#e87028] font-semibold">{b.odds != null ? (b.odds > 0 ? `+${b.odds}` : b.odds) : '—'}</div>
                 <div className="text-[12px] font-medium">${b.stake || 0}</div>
                 <div className={`text-[14px] font-bold ${profitColor}`}>
                   {b.profit != null ? (b.profit >= 0 ? `+$${Number(b.profit).toFixed(2)}` : `-$${Math.abs(b.profit).toFixed(2)}`) : '—'}
@@ -843,7 +843,7 @@ export default function Home() {
                 <div className="flex items-center justify-between mt-1">
                   <div className="flex items-center gap-3 text-[11px] text-[#5a6a78] font-medium">
                     <span>{b.bookmaker || '—'}</span>
-                    <span className="text-[#d4915c] font-semibold">{b.odds != null ? (b.odds > 0 ? `+${b.odds}` : b.odds) : '—'}</span>
+                    <span className="text-[#e87028] font-semibold">{b.odds != null ? (b.odds > 0 ? `+${b.odds}` : b.odds) : '—'}</span>
                     <span>${b.stake || 0}</span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -966,7 +966,7 @@ export default function Home() {
     setParlayLegs(parlayLegs.filter((_, i) => i !== index))
   }
 
-  const calcInputClass = "bg-[#1a1812] border border-[#1e1c16] rounded-md text-[#eef1f5] px-3 py-2 text-[13px] font-medium outline-none focus:border-[#d4915c] w-full"
+  const calcInputClass = "bg-[#1a1812] border border-[#1e1c16] rounded-md text-[#eef1f5] px-3 py-2 text-[13px] font-medium outline-none focus:border-[#e87028] w-full"
   const calcLabelClass = "block text-[11px] font-semibold tracking-wider uppercase text-[#5a6a78] mb-2"
 
   const renderCalcView = () => {
@@ -992,7 +992,7 @@ export default function Home() {
           <div className="flex items-center gap-[4px] md:gap-[5px] flex-wrap">
             {tabs.map(t => (
               <button key={t.id} onClick={() => setCalcTab(t.id)}
-                className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-[5px] md:py-[6px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${calcTab === t.id ? 'bg-amber-950/10 border-amber-900/25 text-[#d4915c]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-[5px] md:py-[6px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${calcTab === t.id ? 'bg-orange-950/10 border-orange-900/25 text-[#e87028]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
                 style={{fontFamily:"'Inter',sans-serif"}}>
                 <span>{t.icon}</span><span className="hidden sm:inline">{t.label}</span><span className="sm:hidden">{t.id === 'arb' ? 'Arb' : t.id === 'convert' ? 'Convert' : t.id === 'parlay' ? 'Parlay' : 'Hold'}</span>
               </button>
@@ -1033,12 +1033,12 @@ export default function Home() {
                           <div className="bg-[#0f0e0b] border border-[#1e1c16] rounded-lg p-3">
                             <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-1">Stake A</div>
                             <div className="text-[20px] font-black text-[#eef1f5]">${arbResult.stakeA}</div>
-                            <div className="text-[11px] text-[#d4915c] font-semibold mt-1">{fmtAmCalc(Number(calcOddsA))}</div>
+                            <div className="text-[11px] text-[#e87028] font-semibold mt-1">{fmtAmCalc(Number(calcOddsA))}</div>
                           </div>
                           <div className="bg-[#0f0e0b] border border-[#1e1c16] rounded-lg p-3">
                             <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-1">Stake B</div>
                             <div className="text-[20px] font-black text-[#eef1f5]">${arbResult.stakeB}</div>
-                            <div className="text-[11px] text-[#d4915c] font-semibold mt-1">{fmtAmCalc(Number(calcOddsB))}</div>
+                            <div className="text-[11px] text-[#e87028] font-semibold mt-1">{fmtAmCalc(Number(calcOddsB))}</div>
                           </div>
                         </div>
                         <div className="flex justify-between py-2 border-t border-[#1e1c16]">
@@ -1098,7 +1098,7 @@ export default function Home() {
                     ].map(([label, val], i) => (
                       <div key={label} className={`flex justify-between px-5 py-3 ${i < 2 ? 'border-b border-[#1e1c16]' : ''}`}>
                         <span className="text-[13px] text-[#5a6a78] font-medium">{label}</span>
-                        <span className={`text-[15px] font-bold ${label === 'Implied Probability' ? 'text-emerald-400' : 'text-[#d4915c]'}`}>{val}</span>
+                        <span className={`text-[15px] font-bold ${label === 'Implied Probability' ? 'text-emerald-400' : 'text-[#e87028]'}`}>{val}</span>
                       </div>
                     ))}
                   </div>
@@ -1135,15 +1135,15 @@ export default function Home() {
                   </div>
                 ))}
                 <button onClick={addParlayLeg}
-                  className="mt-1 mb-5 text-[12px] font-semibold text-[#d4915c] hover:text-[#e0a678] transition-colors bg-transparent border-none cursor-pointer"
+                  className="mt-1 mb-5 text-[12px] font-semibold text-[#e87028] hover:text-[#ff9a4d] transition-colors bg-transparent border-none cursor-pointer"
                   style={{fontFamily:"'Inter',sans-serif"}}>
                   + Add leg
                 </button>
 
                 {parlayResult && (
-                  <div className="rounded-xl border border-amber-900/20 bg-amber-950/5 p-5">
+                  <div className="rounded-xl border border-orange-900/20 bg-orange-950/5 p-5">
                     <div className="text-center mb-4">
-                      <div className="text-[36px] font-black text-[#d4915c] leading-none">{parlayResult.american}</div>
+                      <div className="text-[36px] font-black text-[#e87028] leading-none">{parlayResult.american}</div>
                       <div className="text-[11px] text-[#5a6a78] mt-1 uppercase tracking-wider font-medium">{parlayResult.legs}-leg parlay</div>
                     </div>
                     {[
@@ -1244,12 +1244,12 @@ export default function Home() {
         <div>
           <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{m.bA}</div>
           <div className="text-[13px] font-semibold leading-tight">{m.betA}</div>
-          <div className="text-[12px] text-[#d4915c] font-semibold mt-[2px]">{m.oA}</div>
+          <div className="text-[12px] text-[#e87028] font-semibold mt-[2px]">{m.oA}</div>
         </div>
         <div>
           <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{m.bB}</div>
           <div className="text-[13px] font-semibold leading-tight">{m.betB}</div>
-          <div className="text-[12px] text-[#d4915c] font-semibold mt-[2px]">{m.oB}</div>
+          <div className="text-[12px] text-[#e87028] font-semibold mt-[2px]">{m.oB}</div>
         </div>
         <div>
           <div className="text-[18px] font-black text-emerald-400 leading-none">{m.gap}</div>
@@ -1284,12 +1284,12 @@ export default function Home() {
           <div className="flex-1 bg-[#0f0e0b] rounded-lg p-2">
             <div className="text-[9px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{m.bA}</div>
             <div className="text-[12px] font-semibold leading-tight">{m.betA}</div>
-            <div className="text-[11px] text-[#d4915c] font-semibold mt-[2px]">{m.oA}</div>
+            <div className="text-[11px] text-[#e87028] font-semibold mt-[2px]">{m.oA}</div>
           </div>
           <div className="flex-1 bg-[#0f0e0b] rounded-lg p-2">
             <div className="text-[9px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{m.bB}</div>
             <div className="text-[12px] font-semibold leading-tight">{m.betB}</div>
-            <div className="text-[11px] text-[#d4915c] font-semibold mt-[2px]">{m.oB}</div>
+            <div className="text-[11px] text-[#e87028] font-semibold mt-[2px]">{m.oB}</div>
           </div>
         </div>
         <div className="flex items-center gap-4 text-[11px]">
@@ -1309,7 +1309,7 @@ export default function Home() {
           <p className="text-[14px] text-[#5a6a78] max-w-[420px] mb-6 font-medium leading-relaxed">
             Find overlapping lines across sportsbooks where both sides can win. Available exclusively on the Pro plan.
           </p>
-          <button onClick={handleCheckout} className="px-8 py-3 rounded-xl bg-[#d4915c] text-black text-[14px] font-black hover:bg-[#e0a678] transition-all border-none cursor-pointer">
+          <button onClick={handleCheckout} className="px-8 py-3 rounded-xl bg-[#e87028] text-black text-[14px] font-black hover:bg-[#ff9a4d] transition-all border-none cursor-pointer">
             Get Pro — $75/mo →
           </button>
         </div>
@@ -1330,7 +1330,7 @@ export default function Home() {
           <div className="flex items-center gap-[4px] md:gap-[5px] flex-wrap">
             {['all','nba','nfl','mlb','nhl','epl','mls','atp'].map(s => (
               <button key={s} onClick={() => setSport(s)}
-                className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${sport===s?'bg-amber-950/10 border-amber-900/25 text-[#d4915c]':'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${sport===s?'bg-orange-950/10 border-orange-900/25 text-[#e87028]':'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
                 style={{fontFamily:"'Inter',sans-serif"}}>
                 {s === 'all' ? 'All' : s.toUpperCase()}
               </button>
@@ -1380,7 +1380,7 @@ export default function Home() {
           <p className="text-[14px] text-[#5a6a78] max-w-[420px] mb-6 font-medium leading-relaxed">
             Turn $100 of bonus bets into ~$70-80 of guaranteed real cash. Available exclusively on the Pro plan.
           </p>
-          <button onClick={handleCheckout} className="px-8 py-3 rounded-xl bg-[#d4915c] text-black text-[14px] font-black hover:bg-[#e0a678] transition-all border-none cursor-pointer">
+          <button onClick={handleCheckout} className="px-8 py-3 rounded-xl bg-[#e87028] text-black text-[14px] font-black hover:bg-[#ff9a4d] transition-all border-none cursor-pointer">
             Get Pro — $75/mo →
           </button>
         </div>
@@ -1398,7 +1398,7 @@ export default function Home() {
               <div>
                 <label className="block text-[11px] font-semibold tracking-wider uppercase text-[#5a6a78] mb-2">Bonus from</label>
                 <select value={bonusBook} onChange={e => setBonusBook(e.target.value)}
-                  className="bg-[#1a1812] border border-[#1e1c16] rounded-md text-[#eef1f5] px-3 py-2 text-[13px] font-medium outline-none focus:border-[#d4915c] min-w-[180px]"
+                  className="bg-[#1a1812] border border-[#1e1c16] rounded-md text-[#eef1f5] px-3 py-2 text-[13px] font-medium outline-none focus:border-[#e87028] min-w-[180px]"
                   style={{fontFamily:"'Inter',sans-serif"}}>
                   {BONUS_BOOKS.map(b => <option key={b.id} value={b.id}>{b.label}</option>)}
                 </select>
@@ -1407,11 +1407,11 @@ export default function Home() {
                 <label className="block text-[11px] font-semibold tracking-wider uppercase text-[#5a6a78] mb-2">Bonus amount $</label>
                 <input type="number" min="1" max="5000" value={bonusAmount}
                   onChange={e => setBonusAmount(parseFloat(e.target.value) || 0)}
-                  className="bg-[#1a1812] border border-[#1e1c16] rounded-md text-[#eef1f5] px-3 py-2 text-[13px] font-medium outline-none focus:border-[#d4915c] w-[140px]"
+                  className="bg-[#1a1812] border border-[#1e1c16] rounded-md text-[#eef1f5] px-3 py-2 text-[13px] font-medium outline-none focus:border-[#e87028] w-[140px]"
                   style={{fontFamily:"'Inter',sans-serif"}}/>
               </div>
               <button onClick={runBonusConversion} disabled={bonusLoading || !bonusAmount}
-                className="px-5 py-2 rounded-md bg-[#d4915c] text-black text-[13px] font-black hover:bg-[#e0a678] transition-all border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                className="px-5 py-2 rounded-md bg-[#e87028] text-black text-[13px] font-black hover:bg-[#ff9a4d] transition-all border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                 {bonusLoading ? 'Scanning...' : 'Find conversions →'}
               </button>
               <button onClick={() => setDashView('home')}
@@ -1428,7 +1428,7 @@ export default function Home() {
           )}
           {bonusLoading && (
             <div className="flex flex-col items-center justify-center py-16">
-              <div className="w-8 h-8 border-2 border-[#d4915c] border-t-transparent rounded-full animate-spin mb-3"></div>
+              <div className="w-8 h-8 border-2 border-[#e87028] border-t-transparent rounded-full animate-spin mb-3"></div>
               <div className="text-[13px] text-[#5a6a78] font-medium">Scanning longshots and hedge prices...</div>
             </div>
           )}
@@ -1445,7 +1445,7 @@ export default function Home() {
               ) : (
                 <>
                   <div className="px-5 pt-4 pb-2 text-[11px] text-[#5a6a78] font-medium">
-                    Found <span className="text-[#d4915c] font-bold">{bonusResults.conversions.length}</span> conversions across <span className="text-[#eef1f5] font-bold">{bonusResults.scanned}</span> upcoming games. Sorted by best conversion rate.
+                    Found <span className="text-[#e87028] font-bold">{bonusResults.conversions.length}</span> conversions across <span className="text-[#eef1f5] font-bold">{bonusResults.scanned}</span> upcoming games. Sorted by best conversion rate.
                   </div>
                   <div className="hidden md:grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.5fr 1.5fr 1.5fr 100px 100px'}}>
                     <span>Game</span><span>Bonus bet (longshot)</span><span>Hedge bet</span><span>Hedge cost</span><span>Locked profit</span>
@@ -1463,12 +1463,12 @@ export default function Home() {
                       <div>
                         <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{c.bonusBet.book}</div>
                         <div className="text-[13px] font-semibold leading-tight">{c.bonusBet.label}</div>
-                        <div className="text-[12px] text-[#d4915c] font-semibold mt-[2px]">{c.bonusBet.odds} · ${c.bonusBet.stake} bonus</div>
+                        <div className="text-[12px] text-[#e87028] font-semibold mt-[2px]">{c.bonusBet.odds} · ${c.bonusBet.stake} bonus</div>
                       </div>
                       <div>
                         <div className="text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{c.hedge.book}</div>
                         <div className="text-[13px] font-semibold leading-tight">{c.hedge.label}</div>
-                        <div className="text-[12px] text-[#d4915c] font-semibold mt-[2px]">{c.hedge.odds}</div>
+                        <div className="text-[12px] text-[#e87028] font-semibold mt-[2px]">{c.hedge.odds}</div>
                       </div>
                       <div>
                         <div className="text-[14px] font-bold text-[#eef1f5]">${c.hedge.stake.toFixed(2)}</div>
@@ -1498,12 +1498,12 @@ export default function Home() {
                         <div className="flex-1 bg-[#0f0e0b] rounded-lg p-2">
                           <div className="text-[9px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{c.bonusBet.book}</div>
                           <div className="text-[12px] font-semibold leading-tight">{c.bonusBet.label}</div>
-                          <div className="text-[11px] text-[#d4915c] font-semibold mt-[2px]">{c.bonusBet.odds} · ${c.bonusBet.stake} bonus</div>
+                          <div className="text-[11px] text-[#e87028] font-semibold mt-[2px]">{c.bonusBet.odds} · ${c.bonusBet.stake} bonus</div>
                         </div>
                         <div className="flex-1 bg-[#0f0e0b] rounded-lg p-2">
                           <div className="text-[9px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{c.hedge.book}</div>
                           <div className="text-[12px] font-semibold leading-tight">{c.hedge.label}</div>
-                          <div className="text-[11px] text-[#d4915c] font-semibold mt-[2px]">{c.hedge.odds} · ${c.hedge.stake.toFixed(2)}</div>
+                          <div className="text-[11px] text-[#e87028] font-semibold mt-[2px]">{c.hedge.odds} · ${c.hedge.stake.toFixed(2)}</div>
                         </div>
                       </div>
                     </div>
@@ -1547,11 +1547,11 @@ export default function Home() {
             <span className="block h-[1.5px] bg-[#5a6a78] rounded"></span>
             <span className="block h-[1.5px] bg-[#5a6a78] rounded"></span>
           </button>
-          <span onClick={() => setDashView('home')} className="text-lg md:text-xl font-black tracking-tight cursor-pointer flex-shrink-0">FLUX<span className="text-[#d4915c]">ODDS</span></span>
+          <span onClick={() => setDashView('home')} className="text-lg md:text-xl font-black tracking-tight cursor-pointer flex-shrink-0">FLUX<span className="text-[#e87028]">ODDS</span></span>
           <span className="hidden sm:flex items-center gap-1 bg-emerald-900/10 border border-emerald-800/20 text-emerald-400 px-2 md:px-3 py-[3px] rounded-full text-[10px] md:text-[11px] font-semibold">
             <span className="w-[6px] h-[6px] rounded-full bg-emerald-400 animate-pulse inline-block"></span>LIVE
           </span>
-          {isPro && <span className="bg-[#d4915c] text-black px-2 py-[2px] rounded-full text-[10px] font-black tracking-wider flex-shrink-0">PRO</span>}
+          {isPro && <span className="bg-[#e87028] text-black px-2 py-[2px] rounded-full text-[10px] font-black tracking-wider flex-shrink-0">PRO</span>}
         </div>
         <div className="flex items-center gap-2 md:gap-5">
           {!isBonusView && !isMiddlesView && !isCalcView && !isPnlView && (
@@ -1576,7 +1576,7 @@ export default function Home() {
               </div>
               <div className="w-px h-7 bg-[#1e1c16] hidden sm:block"></div>
               <div className="text-right hidden md:block">
-                <div className="text-[15px] font-bold text-[#d4915c]">{filteredMiddles[0]?.gap || 0}</div>
+                <div className="text-[15px] font-bold text-[#e87028]">{filteredMiddles[0]?.gap || 0}</div>
                 <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">Widest gap</div>
               </div>
               <div className="w-px h-7 bg-[#1e1c16] hidden md:block"></div>
@@ -1584,7 +1584,7 @@ export default function Home() {
           )}
           <button onClick={() => setView('marketing')} className="hidden md:inline-flex border border-[#1e1c16] text-[#5a6a78] px-3 py-[5px] rounded-md text-[12px] font-medium hover:text-[#eef1f5] hover:border-[#2a2820] transition-all bg-transparent cursor-pointer">← Back</button>
           <button onClick={handleSignout} className="border border-[#1e1c16] text-[#5a6a78] px-2 md:px-3 py-[5px] rounded-md text-[11px] md:text-[12px] font-medium hover:text-red-400 hover:border-red-900 transition-all bg-transparent cursor-pointer">Sign out</button>
-          <div className="w-7 h-7 rounded-full bg-[#d4915c] flex items-center justify-center text-[11px] font-black text-black cursor-pointer flex-shrink-0">{user?.email?.[0]?.toUpperCase()||'U'}</div>
+          <div className="w-7 h-7 rounded-full bg-[#e87028] flex items-center justify-center text-[11px] font-black text-black cursor-pointer flex-shrink-0">{user?.email?.[0]?.toUpperCase()||'U'}</div>
         </div>
       </div>
 
@@ -1602,7 +1602,7 @@ export default function Home() {
                 {name:'Bonus Bet Converter',icon:'🎁',badge:'PRO'},
               ].map(t => (
                 <button key={t.name} onClick={() => openTool(t.name)}
-                  className={`flex items-center gap-3 w-full px-2 py-[9px] rounded-lg text-[13px] font-medium transition-all mb-[2px] cursor-pointer ${toolName===t.name&&dashView==='arb'?'bg-amber-950/10 border border-amber-900/20 text-[#d4915c]':'text-[#5a6a78] hover:bg-[#1a1812] hover:text-[#eef1f5] border border-transparent'}`}
+                  className={`flex items-center gap-3 w-full px-2 py-[9px] rounded-lg text-[13px] font-medium transition-all mb-[2px] cursor-pointer ${toolName===t.name&&dashView==='arb'?'bg-orange-950/10 border border-orange-900/20 text-[#e87028]':'text-[#5a6a78] hover:bg-[#1a1812] hover:text-[#eef1f5] border border-transparent'}`}
                   style={{background:'none',fontFamily:"'Inter',sans-serif"}}>
                   <span className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-sm bg-[#1a1812] border border-[#2a2820]">{t.icon}</span>
                   <span className="flex-1 text-left">{t.name}</span>
@@ -1624,10 +1624,10 @@ export default function Home() {
             </div>
             {!isPro && (
               <div className="mt-auto p-3 border-t border-[#1e1c16]">
-                <div className="bg-amber-950/5 border border-amber-900/15 rounded-xl p-3">
-                  <div className="text-[13px] font-bold text-[#d4915c]">Upgrade to Pro</div>
+                <div className="bg-orange-950/5 border border-orange-900/15 rounded-xl p-3">
+                  <div className="text-[13px] font-bold text-[#e87028]">Upgrade to Pro</div>
                   <div className="text-[11px] text-[#5a6a78] mt-1">Unlimited arbs + EV + bonus converter</div>
-                  <button onClick={handleCheckout} className="block w-full mt-2 py-2 rounded-lg bg-[#d4915c] text-black text-[11px] font-black text-center border-none cursor-pointer hover:bg-[#e0a678]">Get Pro — $75/mo</button>
+                  <button onClick={handleCheckout} className="block w-full mt-2 py-2 rounded-lg bg-[#e87028] text-black text-[11px] font-black text-center border-none cursor-pointer hover:bg-[#ff9a4d]">Get Pro — $75/mo</button>
                 </div>
               </div>
             )}
@@ -1637,21 +1637,21 @@ export default function Home() {
         <div className="flex-1 flex flex-col overflow-hidden">
           {dashView === 'home' ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center px-6 relative overflow-hidden">
-              <div className="absolute inset-0 opacity-20" style={{backgroundImage:'linear-gradient(rgba(212,145,92,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(212,145,92,.04) 1px,transparent 1px)',backgroundSize:'52px 52px'}}></div>
-              <div className="absolute bottom-0 left-0 right-0 h-[200px] pointer-events-none" style={{background:'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(212,145,92,.15) 0%, rgba(180,110,65,.06) 40%, transparent 70%)'}}></div>
+              <div className="absolute inset-0 opacity-20" style={{backgroundImage:'linear-gradient(rgba(232,112,40,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(232,112,40,.04) 1px,transparent 1px)',backgroundSize:'52px 52px'}}></div>
+              <div className="absolute bottom-0 left-0 right-0 h-[200px] pointer-events-none" style={{background:'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(232,112,40,.15) 0%, rgba(214,82,24,.06) 40%, transparent 70%)'}}></div>
               <div className="relative z-10 max-w-[560px]">
-                <div className="inline-flex items-center gap-2 bg-amber-950/10 border border-amber-900/20 text-[#d4915c] px-4 py-[5px] rounded-full text-[11px] font-semibold tracking-wider uppercase mb-6">
+                <div className="inline-flex items-center gap-2 bg-orange-950/10 border border-orange-900/20 text-[#e87028] px-4 py-[5px] rounded-full text-[11px] font-semibold tracking-wider uppercase mb-6">
                   <span className="w-[6px] h-[6px] rounded-full bg-emerald-400 animate-pulse inline-block"></span>Scanning 40+ books live
                 </div>
                 <h2 className="text-[clamp(40px,6vw,80px)] font-black leading-[.95] tracking-tight mb-4">
-                  FIND THE <span className="text-[#d4915c]">EDGE.</span><br/>
+                  FIND THE <span className="text-[#e87028]">EDGE.</span><br/>
                   <span className="text-[#2a2820]">BEAT THE BOOKS.</span>
                 </h2>
                 <p className="text-[14px] text-[#5a6a78] max-w-[380px] mx-auto mb-8 leading-relaxed font-medium">Real-time arbitrage, +EV detection, and bonus bet conversion across every major sportsbook.</p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-w-[540px] mx-auto mb-7 px-2 md:px-0">
                   {tools.map(t => (
                     <div key={t.id} onClick={() => openTool(t.name)}
-                      className={`bg-[#0f0e0b] border rounded-xl p-3 cursor-pointer text-left transition-all hover:-translate-y-[2px] relative overflow-hidden ${t.id==='live'||t.id==='ev'?'border-amber-900/25 bg-amber-950/5':'border-[#1e1c16] hover:border-[#2a2820] hover:bg-[#1a1812]'}`}>
+                      className={`bg-[#0f0e0b] border rounded-xl p-3 cursor-pointer text-left transition-all hover:-translate-y-[2px] relative overflow-hidden ${t.id==='live'||t.id==='ev'?'border-orange-900/25 bg-orange-950/5':'border-[#1e1c16] hover:border-[#2a2820] hover:bg-[#1a1812]'}`}>
                       <div className="text-[18px] mb-2">{t.icon}</div>
                       <div className="text-[11px] md:text-[12px] font-bold text-[#eef1f5] mb-[3px]">{t.name}</div>
                       <div className="text-[10px] md:text-[11px] text-[#5a6a78] leading-snug font-medium">{t.desc}</div>
@@ -1659,7 +1659,7 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-                <button onClick={() => openTool('Prematch Arbitrage')} className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-[#d4915c] text-black text-[14px] font-black hover:bg-[#e0a678] transition-all hover:-translate-y-[2px] cursor-pointer border-none">
+                <button onClick={() => openTool('Prematch Arbitrage')} className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-[#e87028] text-black text-[14px] font-black hover:bg-[#ff9a4d] transition-all hover:-translate-y-[2px] cursor-pointer border-none">
                   View Top Arbs <span className="text-[16px]">→</span>
                 </button>
               </div>
@@ -1694,7 +1694,7 @@ export default function Home() {
                 <div className="flex items-center gap-[4px] md:gap-[5px] flex-wrap">
                   {['all','nba','nfl','mlb','nhl','epl','mls','atp'].map(s => (
                     <button key={s} onClick={() => setSport(s)}
-                      className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${sport===s?'bg-amber-950/10 border-amber-900/25 text-[#d4915c]':'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                      className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${sport===s?'bg-orange-950/10 border-orange-900/25 text-[#e87028]':'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
                       style={{fontFamily:"'Inter',sans-serif"}}>
                       {s === 'all' ? 'All' : s.toUpperCase()}
                     </button>
@@ -1702,7 +1702,7 @@ export default function Home() {
                   <div className="w-px h-4 bg-[#1e1c16] mx-[2px] md:mx-1 hidden sm:block"></div>
                   {[0,1,2,3].map(m => (
                     <button key={m} onClick={() => setMinP(m)}
-                      className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${minP===m?'bg-amber-950/10 border-amber-900/25 text-[#d4915c]':'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                      className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${minP===m?'bg-orange-950/10 border-orange-900/25 text-[#e87028]':'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
                       style={{fontFamily:"'Inter',sans-serif"}}>
                       {m === 0 ? 'Any %' : <span className="text-[#eef1f5]">{m}%+</span>}
                     </button>
@@ -1721,9 +1721,9 @@ export default function Home() {
                   </div>
                 )}
                 {userPlan === 'free' && !isLiveView && (
-                  <div className="mt-3 bg-amber-950/5 border border-amber-900/15 rounded-md px-3 py-[6px] flex items-center justify-between">
-                    <span className="text-[12px] text-[#5a6a78] font-medium">Free plan: {isEvView ? <>EV bets above <span className="text-[#eef1f5] font-semibold">{FREE_EV_CAP}%</span></> : <>arbs above <span className="text-[#eef1f5] font-semibold">{FREE_PROFIT_CAP}%</span></>} are locked. <span className="text-[#d4915c] font-semibold">Upgrade to see them.</span></span>
-                    <button onClick={handleCheckout} className="text-[11px] font-black bg-[#d4915c] text-black px-3 py-[5px] rounded-md cursor-pointer border-none hover:bg-[#e0a678]">Get Pro</button>
+                  <div className="mt-3 bg-orange-950/5 border border-orange-900/15 rounded-md px-3 py-[6px] flex items-center justify-between">
+                    <span className="text-[12px] text-[#5a6a78] font-medium">Free plan: {isEvView ? <>EV bets above <span className="text-[#eef1f5] font-semibold">{FREE_EV_CAP}%</span></> : <>arbs above <span className="text-[#eef1f5] font-semibold">{FREE_PROFIT_CAP}%</span></>} are locked. <span className="text-[#e87028] font-semibold">Upgrade to see them.</span></span>
+                    <button onClick={handleCheckout} className="text-[11px] font-black bg-[#e87028] text-black px-3 py-[5px] rounded-md cursor-pointer border-none hover:bg-[#ff9a4d]">Get Pro</button>
                   </div>
                 )}
               </div>
@@ -1789,14 +1789,14 @@ export default function Home() {
               <button onClick={() => setSelectedArb(null)} className="text-[#5a6a78] text-lg hover:text-[#eef1f5] transition-colors bg-transparent border-none cursor-pointer">×</button>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
-              <div className="text-center p-5 bg-amber-950/5 border border-amber-900/10 rounded-xl mb-4">
+              <div className="text-center p-5 bg-orange-950/5 border border-orange-900/10 rounded-xl mb-4">
                 <div className="text-[48px] font-black text-emerald-400 leading-none">+{selectedArb.profit}%</div>
                 <div className="text-[10px] text-[#5a6a78] mt-1 uppercase tracking-wider font-medium">Guaranteed profit</div>
               </div>
               <div className="flex items-center gap-2 mb-4">
                 <label className="text-[12px] text-[#5a6a78] font-medium whitespace-nowrap">Bankroll $</label>
                 <input type="number" value={bankroll} onChange={e => setBankroll(parseFloat(e.target.value)||100)}
-                  className="flex-1 bg-[#1a1812] border border-[#1e1c16] rounded-md text-[#eef1f5] px-2 py-[6px] text-[13px] font-medium outline-none focus:border-[#d4915c]"
+                  className="flex-1 bg-[#1a1812] border border-[#1e1c16] rounded-md text-[#eef1f5] px-2 py-[6px] text-[13px] font-medium outline-none focus:border-[#e87028]"
                   style={{fontFamily:"'Inter',sans-serif"}}/>
               </div>
               <div className="text-[10px] font-semibold tracking-wider uppercase text-[#5a6a78] mb-2">Your bets</div>
@@ -1810,7 +1810,7 @@ export default function Home() {
                     <div className="text-[13px] font-semibold leading-tight">{b.bet}</div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className="text-[12px] text-[#d4915c] font-semibold">{b.odds}</div>
+                    <div className="text-[12px] text-[#e87028] font-semibold">{b.odds}</div>
                     <div className="text-[13px] text-emerald-400 mt-[2px] font-semibold">${b.stake}</div>
                   </div>
                 </div>
@@ -1825,7 +1825,7 @@ export default function Home() {
               </div>
             </div>
             <div className="flex gap-2 p-4 border-t border-[#1e1c16]">
-              <button className="flex-1 py-[10px] rounded-xl bg-[#d4915c] text-black text-[12px] font-black hover:bg-[#e0a678] transition-colors border-none cursor-pointer">Place bets →</button>
+              <button className="flex-1 py-[10px] rounded-xl bg-[#e87028] text-black text-[12px] font-black hover:bg-[#ff9a4d] transition-colors border-none cursor-pointer">Place bets →</button>
               <button onClick={() => setSelectedArb(null)} className="flex-1 py-[10px] rounded-xl bg-[#1a1812] border border-[#1e1c16] text-[#5a6a78] text-[12px] font-medium hover:text-[#eef1f5] transition-colors cursor-pointer">Save</button>
             </div>
           </div>
@@ -1842,7 +1842,7 @@ export default function Home() {
       {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-[90] backdrop-blur-sm" onClick={() => setSidebarOpen(false)}></div>}
       <div className={`fixed top-0 left-0 bottom-0 w-[256px] bg-[#0f0e0b] border-r border-[#1e1c16] z-[91] flex flex-col overflow-y-auto transition-transform duration-300 ${sidebarOpen?'translate-x-0':'-translate-x-full'}`}>
         <div className="h-[60px] flex items-center justify-between px-4 border-b border-[#1e1c16]">
-          <div className="text-xl font-black tracking-tight">FLUX<span className="text-[#d4915c]">ODDS</span></div>
+          <div className="text-xl font-black tracking-tight">FLUX<span className="text-[#e87028]">ODDS</span></div>
           <button onClick={() => setSidebarOpen(false)} className="text-[#5a6a78] text-lg hover:text-[#eef1f5] bg-transparent border-none cursor-pointer">×</button>
         </div>
         <div className="p-3 pt-4">
@@ -1874,10 +1874,10 @@ export default function Home() {
           ))}
         </div>
         <div className="mt-auto p-3 border-t border-[#1e1c16]">
-          <div className="bg-amber-950/5 border border-amber-900/15 rounded-xl p-3 cursor-pointer hover:bg-amber-950/10 transition-colors">
-            <div className="text-[13px] font-bold text-[#d4915c]">Upgrade to Pro</div>
+          <div className="bg-orange-950/5 border border-orange-900/15 rounded-xl p-3 cursor-pointer hover:bg-orange-950/10 transition-colors">
+            <div className="text-[13px] font-bold text-[#e87028]">Upgrade to Pro</div>
             <div className="text-[11px] text-[#5a6a78] mt-1 font-medium">Unlimited arbs + EV + bonus converter</div>
-            <span className="block mt-2 py-2 rounded-lg bg-[#d4915c] text-black text-[11px] font-black text-center">Get Pro — $75/mo</span>
+            <span className="block mt-2 py-2 rounded-lg bg-[#e87028] text-black text-[11px] font-black text-center">Get Pro — $75/mo</span>
           </div>
         </div>
       </div>
@@ -1889,7 +1889,7 @@ export default function Home() {
             <span className="block h-[1.5px] bg-[#5a6a78] rounded"></span>
             <span className="block h-[1.5px] bg-[#5a6a78] rounded"></span>
           </button>
-          <a href="#home" className="text-[20px] md:text-[22px] font-black tracking-tight no-underline text-[#eef1f5]">FLUX<span className="text-[#d4915c]">ODDS</span></a>
+          <a href="#home" className="text-[20px] md:text-[22px] font-black tracking-tight no-underline text-[#eef1f5]">FLUX<span className="text-[#e87028]">ODDS</span></a>
         </div>
         <div className="hidden md:flex items-center gap-7">
           {['#how','#features','#pricing','#faq','#contact'].map((h,i) => (
@@ -1901,35 +1901,35 @@ export default function Home() {
         <div className="flex items-center gap-2">
           {user ? (
             <>
-              <button onClick={launchDash} className="px-3 md:px-5 py-[8px] rounded-lg bg-[#d4915c] text-black text-[12px] md:text-[13px] font-bold hover:bg-[#e0a678] transition-all border-none cursor-pointer">Dashboard →</button>
+              <button onClick={launchDash} className="px-3 md:px-5 py-[8px] rounded-lg bg-[#e87028] text-black text-[12px] md:text-[13px] font-bold hover:bg-[#ff9a4d] transition-all border-none cursor-pointer">Dashboard →</button>
               <button onClick={handleSignout} className="hidden md:inline-flex px-4 py-[7px] rounded-lg border border-[#1e1c16] text-[#5a6a78] text-[13px] font-medium hover:border-red-800 hover:text-red-400 transition-all bg-transparent cursor-pointer">Sign out</button>
             </>
           ) : (
             <>
-              <button onClick={() => { setLoginTab('login'); setLoginOpen(true) }} className="hidden md:inline-flex px-4 py-[7px] rounded-lg border border-[#1e1c16] text-[#5a6a78] text-[13px] font-medium hover:border-[#d4915c] hover:text-[#d4915c] transition-all bg-transparent cursor-pointer">Log in</button>
-              <button onClick={launchDash} className="px-3 md:px-5 py-[8px] rounded-lg bg-[#d4915c] text-black text-[12px] md:text-[13px] font-bold hover:bg-[#e0a678] transition-all border-none cursor-pointer">Launch App →</button>
+              <button onClick={() => { setLoginTab('login'); setLoginOpen(true) }} className="hidden md:inline-flex px-4 py-[7px] rounded-lg border border-[#1e1c16] text-[#5a6a78] text-[13px] font-medium hover:border-[#e87028] hover:text-[#e87028] transition-all bg-transparent cursor-pointer">Log in</button>
+              <button onClick={launchDash} className="px-3 md:px-5 py-[8px] rounded-lg bg-[#e87028] text-black text-[12px] md:text-[13px] font-bold hover:bg-[#ff9a4d] transition-all border-none cursor-pointer">Launch App →</button>
             </>
           )}
         </div>
       </nav>
 
       <section id="home" className="min-h-screen flex flex-col items-center justify-center text-center px-5 md:px-12 pt-[90px] md:pt-[110px] pb-16 md:pb-20 relative overflow-hidden">
-        <div className="absolute inset-0" style={{backgroundImage:'linear-gradient(rgba(212,145,92,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(212,145,92,.03) 1px,transparent 1px)',backgroundSize:'58px 58px',maskImage:'radial-gradient(ellipse 80% 70% at 50% 50%,black 20%,transparent 100%)'}}></div>
-        <div className="absolute bottom-0 left-0 right-0 h-[280px] pointer-events-none" style={{background:'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(212,145,92,.18) 0%, rgba(180,110,65,.08) 40%, transparent 70%)'}}></div>
+        <div className="absolute inset-0" style={{backgroundImage:'linear-gradient(rgba(232,112,40,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(232,112,40,.03) 1px,transparent 1px)',backgroundSize:'58px 58px',maskImage:'radial-gradient(ellipse 80% 70% at 50% 50%,black 20%,transparent 100%)'}}></div>
+        <div className="absolute bottom-0 left-0 right-0 h-[280px] pointer-events-none" style={{background:'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(232,112,40,.18) 0%, rgba(214,82,24,.08) 40%, transparent 70%)'}}></div>
         <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 bg-amber-950/10 border border-amber-900/20 text-[#d4915c] px-4 py-[5px] rounded-full text-[11px] font-semibold tracking-wider uppercase mb-7">
+          <div className="inline-flex items-center gap-2 bg-orange-950/10 border border-orange-900/20 text-[#e87028] px-4 py-[5px] rounded-full text-[11px] font-semibold tracking-wider uppercase mb-7">
             <span className="w-[6px] h-[6px] rounded-full bg-emerald-400 animate-pulse inline-block"></span>Live · Prematch · +EV · Bonus
           </div>
           <h1 className="font-black leading-[.95] tracking-tight mb-2" style={{fontSize:'clamp(48px,7vw,100px)'}}>
-            FIND THE <span className="text-[#d4915c]">EDGE.</span><br/>
+            FIND THE <span className="text-[#e87028]">EDGE.</span><br/>
             <span className="text-[#2a2820]">BEAT THE BOOKS.</span>
           </h1>
           <p className="text-[#5a6a78] font-medium max-w-[500px] mx-auto mt-5 mb-11 leading-relaxed" style={{fontSize:'clamp(15px,1.6vw,18px)'}}>
             Live arbs during in-game action, prematch arbs for upcoming games, +EV bets against Pinnacle de-vigged sharp lines, and a bonus bet converter — all in one dashboard.
           </p>
           <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
-            <button onClick={launchDash} className="w-full sm:w-auto px-9 py-4 rounded-xl bg-[#d4915c] text-black text-[15px] font-black hover:bg-[#e0a678] transition-all hover:-translate-y-[2px] border-none cursor-pointer">Launch FluxOdds →</button>
-            <a href="#how" className="w-full sm:w-auto px-9 py-4 rounded-xl border border-[#1e1c16] text-[#eef1f5] text-[15px] font-semibold hover:border-[#d4915c] hover:text-[#d4915c] transition-all no-underline text-center">How it works</a>
+            <button onClick={launchDash} className="w-full sm:w-auto px-9 py-4 rounded-xl bg-[#e87028] text-black text-[15px] font-black hover:bg-[#ff9a4d] transition-all hover:-translate-y-[2px] border-none cursor-pointer">Launch FluxOdds →</button>
+            <a href="#how" className="w-full sm:w-auto px-9 py-4 rounded-xl border border-[#1e1c16] text-[#eef1f5] text-[15px] font-semibold hover:border-[#e87028] hover:text-[#e87028] transition-all no-underline text-center">How it works</a>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-11 mt-12 md:mt-16 justify-center">
             {[['40+','Sportsbooks'],['+5.1%','Best live arb'],['<1s','Detection'],['24/7','Always on']].map(([n,l],i) => (
@@ -1957,7 +1957,7 @@ export default function Home() {
       </div>
 
       <section id="how" className="py-16 md:py-[90px] px-5 md:px-12 bg-[#0f0e0b] border-t border-b border-[#1e1c16]">
-        <div className="text-[11px] font-semibold tracking-widest uppercase text-[#d4915c] mb-3">How it works</div>
+        <div className="text-[11px] font-semibold tracking-widest uppercase text-[#e87028] mb-3">How it works</div>
         <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>THREE STEPS.<br/>PURE PROFIT.</h2>
         <p className="text-[#5a6a78] text-[17px] max-w-[500px] leading-relaxed font-medium">No spreadsheets. No manual odds checking. FluxOdds does the heavy lifting so you can focus on placing bets.</p>
         <div className="grid grid-cols-1 md:grid-cols-3 mt-14 border border-[#1e1c16] rounded-xl overflow-hidden" style={{gap:'2px'}}>
@@ -1967,7 +1967,7 @@ export default function Home() {
             {n:'03',t:'You place the bets',d:'Place stakes at each book, lock in guaranteed profit, build long-term EV, or convert promos into cash.'},
           ].map((s,i) => (
             <div key={i} className="p-9 bg-[#080806] hover:bg-[#0f0e0b] transition-colors group">
-              <div className="text-[60px] font-black text-[#2a2820] group-hover:text-[#d4915c] leading-none mb-5 transition-colors">{s.n}</div>
+              <div className="text-[60px] font-black text-[#2a2820] group-hover:text-[#e87028] leading-none mb-5 transition-colors">{s.n}</div>
               <h3 className="text-[18px] font-bold mb-3">{s.t}</h3>
               <p className="text-[#5a6a78] text-[14px] leading-[1.7] font-medium">{s.d}</p>
             </div>
@@ -1976,7 +1976,7 @@ export default function Home() {
       </section>
 
       <section id="features" className="py-16 md:py-[90px] px-5 md:px-12 bg-[#080806]">
-        <div className="text-[11px] font-semibold tracking-widest uppercase text-[#d4915c] mb-3">Features</div>
+        <div className="text-[11px] font-semibold tracking-widest uppercase text-[#e87028] mb-3">Features</div>
         <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>EVERYTHING YOU<br/>NEED TO WIN.</h2>
         <p className="text-[#5a6a78] text-[17px] max-w-[500px] leading-relaxed font-medium">Built for beginners and pros. All in one dashboard.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 mt-10 md:mt-14 border border-[#1e1c16] rounded-xl overflow-hidden" style={{gap:'1px',background:'#1e1c16'}}>
@@ -1989,7 +1989,7 @@ export default function Home() {
             {icon:'📊',t:'P&L tracker',d:'Log every bet and track your running profit across books, sports, and time.'},
           ].map((f,i) => (
             <div key={i} className="bg-[#080806] p-6 md:p-8 hover:bg-[#0f0e0b] transition-colors">
-              <div className="w-[42px] h-[42px] rounded-xl bg-amber-950/10 border border-amber-900/15 flex items-center justify-center text-[18px] mb-5">{f.icon}</div>
+              <div className="w-[42px] h-[42px] rounded-xl bg-orange-950/10 border border-orange-900/15 flex items-center justify-center text-[18px] mb-5">{f.icon}</div>
               <h3 className="text-[17px] font-bold mb-2">{f.t}</h3>
               <p className="text-[#5a6a78] text-[13px] leading-[1.7] font-medium">{f.d}</p>
             </div>
@@ -1998,21 +1998,21 @@ export default function Home() {
       </section>
 
       <section id="pricing" className="py-16 md:py-[90px] px-5 md:px-12 bg-[#080806]">
-        <div className="text-[11px] font-semibold tracking-widest uppercase text-[#d4915c] mb-3">Pricing</div>
+        <div className="text-[11px] font-semibold tracking-widest uppercase text-[#e87028] mb-3">Pricing</div>
         <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>PAY FOR WHAT<br/>YOU WIN WITH.</h2>
         <p className="text-[#5a6a78] text-[17px] max-w-[500px] leading-relaxed font-medium">Start free. Scale when you're profitable. No contracts, cancel anytime.</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-10 md:mt-14">
           {[
-            {name:'Free',price:'0',desc:'Discover FluxOdds and start finding arbs at no cost.',btn:'Get started free',btnStyle:'border border-[#1e1c16] text-[#eef1f5] hover:border-[#d4915c] hover:text-[#d4915c]',featured:false,
+            {name:'Free',price:'0',desc:'Discover FluxOdds and start finding arbs at no cost.',btn:'Get started free',btnStyle:'border border-[#1e1c16] text-[#eef1f5] hover:border-[#e87028] hover:text-[#e87028]',featured:false,
               feats:['Prematch arbs capped at 2%','+EV bets capped at 1.5%','Live arb access','All sports access','Basic bet calculator'],
               off:['No bonus bet converter','No instant alerts','No middles finder','No P&L tracker']},
-            {name:'Pro',price:'75',desc:'Full access for serious arbers ready to build real profit.',btn:'Try Pro Free For 3 Days',btnStyle:'bg-[#d4915c] text-black hover:bg-[#e0a678]',featured:true,badge:'Most popular',
+            {name:'Pro',price:'75',desc:'Full access for serious arbers ready to build real profit.',btn:'Try Pro Free For 3 Days',btnStyle:'bg-[#e87028] text-black hover:bg-[#ff9a4d]',featured:true,badge:'Most popular',
               feats:['Unlimited prematch + live arbs','Unlimited +EV bets','Bonus bet converter','40+ sportsbooks','Instant alerts','Middles finder','Full P&L tracker','3 device limit','Cancel anytime'],off:[]},
             {name:'Pro Day Pass',price:'15',desc:'All Pro features for 24 hours. Perfect for occasional arbers.',btn:'Coming Soon',btnStyle:'border border-[#1e1c16] text-[#5a6a78]',featured:false,badge:'Coming soon',
               feats:['All Pro features','24 hour access','One-time purchase','No subscription needed'],off:[]},
           ].map((p,i) => (
-            <div key={i} className={`relative rounded-xl p-6 md:p-9 transition-all hover:-translate-y-[3px] ${p.featured?'border border-[#d4915c] bg-[#0f0e0b]':'border border-[#1e1c16] bg-[#0f0e0b] hover:border-[#2a2820]'}`}>
-              {p.badge && <div className="absolute -top-[13px] left-1/2 -translate-x-1/2 bg-[#d4915c] text-black px-4 py-[3px] rounded-full text-[10px] font-black tracking-wider uppercase whitespace-nowrap">{p.badge}</div>}
+            <div key={i} className={`relative rounded-xl p-6 md:p-9 transition-all hover:-translate-y-[3px] ${p.featured?'border border-[#e87028] bg-[#0f0e0b]':'border border-[#1e1c16] bg-[#0f0e0b] hover:border-[#2a2820]'}`}>
+              {p.badge && <div className="absolute -top-[13px] left-1/2 -translate-x-1/2 bg-[#e87028] text-black px-4 py-[3px] rounded-full text-[10px] font-black tracking-wider uppercase whitespace-nowrap">{p.badge}</div>}
               <div className="text-[13px] font-semibold text-[#5a6a78] tracking-wider uppercase mb-3">{p.name}</div>
               <div className="text-[58px] font-black leading-none mb-1"><sup className="text-[24px]">$</sup>{p.price}<span className="text-[16px] text-[#5a6a78] font-medium">/mo</span></div>
               <p className="text-[#5a6a78] text-[13px] mb-7 leading-relaxed font-medium">{p.desc}</p>
@@ -2028,7 +2028,7 @@ export default function Home() {
 
       <section id="faq" className="py-16 md:py-[90px] px-5 md:px-12 bg-[#0f0e0b] border-t border-b border-[#1e1c16]">
         <div className="max-w-[720px] mx-auto">
-          <div className="text-[11px] font-semibold tracking-widest uppercase text-[#d4915c] mb-3">FAQ</div>
+          <div className="text-[11px] font-semibold tracking-widest uppercase text-[#e87028] mb-3">FAQ</div>
           <h2 className="font-black leading-none tracking-tight mb-14" style={{fontSize:'clamp(32px,4vw,56px)'}}>GOT QUESTIONS?</h2>
           <div className="flex flex-col gap-[2px]">
             {faqs.map((f,i) => (
@@ -2037,7 +2037,7 @@ export default function Home() {
                   className="w-full bg-[#080806] px-7 py-5 text-left text-[15px] font-semibold flex justify-between items-center hover:bg-[#0f0e0b] transition-colors border-none cursor-pointer text-[#eef1f5]"
                   style={{fontFamily:"'Inter',sans-serif"}}>
                   {f.q}
-                  <span className={`w-[22px] h-[22px] rounded-full bg-[#1a1812] border border-[#1e1c16] flex items-center justify-center text-[15px] text-[#d4915c] flex-shrink-0 ml-4 transition-transform ${faqOpen===i?'rotate-45':''}`}>+</span>
+                  <span className={`w-[22px] h-[22px] rounded-full bg-[#1a1812] border border-[#1e1c16] flex items-center justify-center text-[15px] text-[#e87028] flex-shrink-0 ml-4 transition-transform ${faqOpen===i?'rotate-45':''}`}>+</span>
                 </button>
                 {faqOpen===i && <div className="bg-[#080806] px-7 pb-5 text-[14px] text-[#5a6a78] leading-[1.75] font-medium">{f.a}</div>}
               </div>
@@ -2047,21 +2047,21 @@ export default function Home() {
       </section>
 
       <div className="py-16 md:py-[90px] px-5 md:px-12 text-center bg-[#080806] border-t border-[#1e1c16] relative overflow-hidden">
-        <div className="absolute inset-0" style={{background:'radial-gradient(ellipse 55% 80% at 50% 50%,rgba(212,145,92,.06) 0%,transparent 70%)'}}></div>
+        <div className="absolute inset-0" style={{background:'radial-gradient(ellipse 55% 80% at 50% 50%,rgba(232,112,40,.06) 0%,transparent 70%)'}}></div>
         <div className="relative z-10">
-          <div className="text-[11px] font-semibold tracking-widest uppercase text-[#d4915c] mb-3">Ready?</div>
-          <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(36px,6vw,80px)'}}>STOP GAMBLING.<br/><span className="text-[#d4915c]">START WINNING.</span></h2>
+          <div className="text-[11px] font-semibold tracking-widest uppercase text-[#e87028] mb-3">Ready?</div>
+          <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(36px,6vw,80px)'}}>STOP GAMBLING.<br/><span className="text-[#e87028]">START WINNING.</span></h2>
           <p className="text-[#5a6a78] text-[17px] max-w-[480px] mx-auto mb-10 leading-relaxed font-medium">Join thousands of bettors using FluxOdds to find guaranteed profit every day.</p>
           <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
-            <button onClick={launchDash} className="w-full sm:w-auto px-9 py-4 rounded-xl bg-[#d4915c] text-black text-[15px] font-black hover:bg-[#e0a678] transition-all hover:-translate-y-[2px] border-none cursor-pointer">Launch FluxOdds →</button>
-            <a href="#pricing" className="w-full sm:w-auto px-9 py-4 rounded-xl border border-[#1e1c16] text-[#eef1f5] text-[15px] font-semibold hover:border-[#d4915c] hover:text-[#d4915c] transition-all no-underline text-center">View pricing</a>
+            <button onClick={launchDash} className="w-full sm:w-auto px-9 py-4 rounded-xl bg-[#e87028] text-black text-[15px] font-black hover:bg-[#ff9a4d] transition-all hover:-translate-y-[2px] border-none cursor-pointer">Launch FluxOdds →</button>
+            <a href="#pricing" className="w-full sm:w-auto px-9 py-4 rounded-xl border border-[#1e1c16] text-[#eef1f5] text-[15px] font-semibold hover:border-[#e87028] hover:text-[#e87028] transition-all no-underline text-center">View pricing</a>
           </div>
         </div>
       </div>
 
       <section id="contact" className="py-16 md:py-[90px] px-5 md:px-12 bg-[#080806]">
         <div className="text-center mb-14">
-          <div className="text-[11px] font-semibold tracking-widest uppercase text-[#d4915c] mb-3">Contact</div>
+          <div className="text-[11px] font-semibold tracking-widest uppercase text-[#e87028] mb-3">Contact</div>
           <h2 className="font-black leading-none tracking-tight" style={{fontSize:'clamp(32px,4vw,56px)'}}>GET IN TOUCH.</h2>
         </div>
         <div className="max-w-[500px] mx-auto bg-[#0f0e0b] border border-[#1e1c16] rounded-xl p-6 md:p-11">
@@ -2076,21 +2076,21 @@ export default function Home() {
               {[{l:'Name',t:'text',p:'Your name'},{l:'Email',t:'email',p:'you@example.com'}].map(f => (
                 <div key={f.l} className="mb-4">
                   <label className="block text-[11px] font-semibold tracking-wider uppercase text-[#5a6a78] mb-2">{f.l}</label>
-                  <input type={f.t} placeholder={f.p} className="w-full bg-[#080806] border border-[#1e1c16] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#d4915c] transition-colors font-medium" style={{fontFamily:"'Inter',sans-serif"}}/>
+                  <input type={f.t} placeholder={f.p} className="w-full bg-[#080806] border border-[#1e1c16] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#e87028] transition-colors font-medium" style={{fontFamily:"'Inter',sans-serif"}}/>
                 </div>
               ))}
               <div className="mb-5">
                 <label className="block text-[11px] font-semibold tracking-wider uppercase text-[#5a6a78] mb-2">Message</label>
-                <textarea placeholder="What's on your mind?" rows={4} className="w-full bg-[#080806] border border-[#1e1c16] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#d4915c] transition-colors resize-none font-medium" style={{fontFamily:"'Inter',sans-serif"}}></textarea>
+                <textarea placeholder="What's on your mind?" rows={4} className="w-full bg-[#080806] border border-[#1e1c16] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#e87028] transition-colors resize-none font-medium" style={{fontFamily:"'Inter',sans-serif"}}></textarea>
               </div>
-              <button onClick={() => setContactSent(true)} className="w-full py-4 rounded-xl bg-[#d4915c] text-black text-[14px] font-black hover:bg-[#e0a678] transition-all border-none cursor-pointer">Send message</button>
+              <button onClick={() => setContactSent(true)} className="w-full py-4 rounded-xl bg-[#e87028] text-black text-[14px] font-black hover:bg-[#ff9a4d] transition-all border-none cursor-pointer">Send message</button>
             </>
           )}
         </div>
       </section>
 
       <footer className="bg-[#0f0e0b] border-t border-[#1e1c16] px-5 md:px-12 py-8 md:py-10 flex flex-col md:flex-row items-center justify-between gap-5">
-        <div className="text-[22px] font-black tracking-tight">FLUX<span className="text-[#d4915c]">ODDS</span></div>
+        <div className="text-[22px] font-black tracking-tight">FLUX<span className="text-[#e87028]">ODDS</span></div>
         <div className="flex flex-wrap justify-center gap-4 md:gap-6">
           {[['#how','How it works'],['#features','Features'],['#pricing','Pricing'],['#faq','FAQ'],['#contact','Contact']].map(([h,l]) => (
             <a key={h} href={h} className="text-[#5a6a78] text-[13px] no-underline hover:text-[#eef1f5] transition-colors font-medium">{l}</a>
@@ -2109,7 +2109,7 @@ export default function Home() {
             <div className="flex border border-[#1e1c16] rounded-lg overflow-hidden mb-6">
               {['login','signup'].map(t => (
                 <button key={t} onClick={() => setLoginTab(t)}
-                  className={`flex-1 py-[9px] text-[13px] font-bold border-none cursor-pointer transition-all ${loginTab===t?'bg-[#d4915c] text-black':'bg-transparent text-[#5a6a78]'}`}
+                  className={`flex-1 py-[9px] text-[13px] font-bold border-none cursor-pointer transition-all ${loginTab===t?'bg-[#e87028] text-black':'bg-transparent text-[#5a6a78]'}`}
                   style={{fontFamily:"'Inter',sans-serif"}}>
                   {t === 'login' ? 'Log in' : 'Sign up'}
                 </button>
@@ -2118,17 +2118,17 @@ export default function Home() {
             <div className="mb-4">
               <label className="block text-[11px] font-semibold tracking-wider uppercase text-[#5a6a78] mb-2">Email</label>
               <input type="email" placeholder="you@example.com" value={signupEmail} onChange={e => setSignupEmail(e.target.value)}
-                className="w-full bg-[#080806] border border-[#1e1c16] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#d4915c] transition-colors font-medium" style={{fontFamily:"'Inter',sans-serif"}}/>
+                className="w-full bg-[#080806] border border-[#1e1c16] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#e87028] transition-colors font-medium" style={{fontFamily:"'Inter',sans-serif"}}/>
             </div>
             <div className="mb-4">
               <label className="block text-[11px] font-semibold tracking-wider uppercase text-[#5a6a78] mb-2">Password</label>
               <input type="password" placeholder="••••••••" value={signupPassword} onChange={e => setSignupPassword(e.target.value)}
-                className="w-full bg-[#080806] border border-[#1e1c16] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#d4915c] transition-colors font-medium" style={{fontFamily:"'Inter',sans-serif"}}/>
+                className="w-full bg-[#080806] border border-[#1e1c16] rounded-lg text-[#eef1f5] px-4 py-3 text-[14px] outline-none focus:border-[#e87028] transition-colors font-medium" style={{fontFamily:"'Inter',sans-serif"}}/>
             </div>
-            <button onClick={handleSignup} className="w-full mt-1 py-[14px] rounded-xl bg-[#d4915c] text-black text-[14px] font-black hover:bg-[#e0a678] transition-all border-none cursor-pointer">
+            <button onClick={handleSignup} className="w-full mt-1 py-[14px] rounded-xl bg-[#e87028] text-black text-[14px] font-black hover:bg-[#ff9a4d] transition-all border-none cursor-pointer">
               {loginTab === 'login' ? 'Log in →' : 'Create account →'}
             </button>
-            {loginTab === 'login' && <div className="text-center mt-3"><button onClick={handleForgotPassword} className="text-[12px] text-[#5a6a78] hover:text-[#d4915c] transition-colors bg-transparent border-none cursor-pointer font-medium" style={{fontFamily:"'Inter',sans-serif"}}>Forgot password?</button></div>}
+            {loginTab === 'login' && <div className="text-center mt-3"><button onClick={handleForgotPassword} className="text-[12px] text-[#5a6a78] hover:text-[#e87028] transition-colors bg-transparent border-none cursor-pointer font-medium" style={{fontFamily:"'Inter',sans-serif"}}>Forgot password?</button></div>}
           </div>
         </>
       )}
