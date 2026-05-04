@@ -6,7 +6,7 @@
 import { CRON_CHAIN_HEADER } from '@/lib/cronChildAuth';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 function unauthorized(msg = 'unauthorized') {
   return Response.json({ error: msg }, { status: 401 });
