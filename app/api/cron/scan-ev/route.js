@@ -11,8 +11,12 @@ export const maxDuration = 30;
 
 export async function GET(request) {
   const url = new URL(request.url);
-  const secret = url.searchParams.get('secret');
-  if (secret !== process.env.CRON_SECRET) {
+  const querySecret = url.searchParams.get('secret');
+  const authHeader = request.headers.get('authorization') || '';
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return Response.json({ error: 'CRON_SECRET not configured' }, { status: 401 });
+  const authOk = authHeader === `Bearer ${cronSecret}` || querySecret === cronSecret;
+  if (!authOk) {
     return Response.json({ error: 'unauthorized' }, { status: 401 });
   }
 
@@ -48,11 +52,9 @@ export async function GET(request) {
     fingerprint: b.fingerprint,
     payload: b,
     ev: b.ev,
-    first_seen_at: now,
     last_seen_at: now,
   }));
 
-  // Upsert: keep first_seen_at on existing rows, refresh last_seen_at + payload
   if (rows.length > 0) {
     const { error } = await supabase
       .from('ev_sightings')
@@ -60,8 +62,6 @@ export async function GET(request) {
     if (error) console.error('Supabase upsert error:', error);
   }
 
-  // Update last_seen_at for currently-seen fingerprints (so we know which are stale)
-  const seen = new Set(rows.map(r => r.fingerprint));
   // Stale rows older than 60s get pruned from the cache
   await supabase
     .from('ev_sightings')

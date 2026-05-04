@@ -3,8 +3,32 @@
     "app/api/cron/scan/route.js": {
       "maxDuration": 30
     },
+    "app/api/cron/scan-live/route.js": {
+      "maxDuration": 30
+    },
+    "app/api/cron/scan-ev/route.js": {
+      "maxDuration": 30
+    },
     "app/api/cron/scan-middles/route.js": {
       "maxDuration": 30
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/scan",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/scan-live",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/scan-ev",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/scan-middles",
+      "schedule": "* * * * *"
+    }
+  ]
 }
