@@ -62,14 +62,14 @@ export async function GET(request) {
     if (error) console.error('Supabase upsert error:', error);
   }
 
-  let stalePruned = null;
+  let stalePruned = false;
   if (scanHealthy) {
-    const { error: delErr, count } = await supabase
+    const { error: delErr } = await supabase
       .from('live_arb_sightings')
-      .delete({ count: 'exact' })
+      .delete()
       .lt('last_seen_at', new Date(Date.now() - 30_000).toISOString());
     if (delErr) console.error('Live stale prune error:', delErr);
-    else stalePruned = count ?? 0;
+    else stalePruned = true;
   }
 
   return Response.json({

@@ -144,7 +144,12 @@ export default function Home() {
       try {
         const res = await fetch('/api/arbs', { cache: 'no-store' })
         const data = await res.json()
-        if (!cancelled) setLiveData(data.arbs || [])
+        if (cancelled) return
+        if (!res.ok || data.error) {
+          console.error('arbs fetch failed:', data.error || data.detail || res.status)
+          return
+        }
+        setLiveData(data.arbs || [])
       } catch (e) { console.error('arbs fetch:', e) }
     }
     fetchArbs()
@@ -159,7 +164,12 @@ export default function Home() {
       try {
         const res = await fetch('/api/live-arbs', { cache: 'no-store' })
         const data = await res.json()
-        if (!cancelled) setLiveArbsData(data.arbs || [])
+        if (cancelled) return
+        if (!res.ok || data.error) {
+          console.error('live-arbs fetch failed:', data.error || res.status)
+          return
+        }
+        setLiveArbsData(data.arbs || [])
       } catch (e) { console.error('live-arbs fetch:', e) }
     }
     fetchLive()
@@ -316,7 +326,17 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bonusBookID: bonusBook, bonusAmount }),
       })
-      const data = await res.json()
+      let data = {}
+      try {
+        data = await res.json()
+      } catch {
+        setBonusError(res.ok ? 'Invalid response from server.' : `Server error (${res.status}). Try again.`)
+        return
+      }
+      if (!res.ok) {
+        setBonusError(data.message || data.error || `Request failed (${res.status}). Try again.`)
+        return
+      }
       if (data.error) setBonusError(data.error)
       else setBonusResults(data)
     } catch (e) { setBonusError('Failed to run scan.') }
