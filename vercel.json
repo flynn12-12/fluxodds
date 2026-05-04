@@ -11,6 +11,18 @@
     },
     "app/api/cron/scan-middles/route.js": {
       "maxDuration": 30
+    },
+    "app/api/arbs/route.js": {
+      "maxDuration": 30
+    },
+    "app/api/live-arbs/route.js": {
+      "maxDuration": 30
+    },
+    "app/api/ev/route.js": {
+      "maxDuration": 30
+    },
+    "app/api/middles/route.js": {
+      "maxDuration": 30
     }
   },
   "crons": [

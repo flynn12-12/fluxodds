@@ -153,74 +153,79 @@ export default function Home() {
   const hiddenBookSet = useMemo(() => new Set(hiddenBooks.map((x) => String(x).toLowerCase())), [hiddenBooks])
   const bookAllowed = (id) => !hiddenBookSet.has(String(id || '').toLowerCase())
 
-  // Prematch arbs
+  // Prematch arbs — use setTimeout chaining so we never stack concurrent fetches
+  // (inline scans can take 10-15s; setInterval would pile up requests)
   useEffect(() => {
     let cancelled = false
-    const fetchArbs = async () => {
+    let timer = null
+    const poll = async () => {
       try {
         const res = await fetch('/api/arbs', { cache: 'no-store' })
         const data = await res.json()
         if (cancelled) return
         if (!res.ok || data.error) {
           console.error('arbs fetch failed:', data.error || data.detail || res.status)
-          return
+        } else {
+          setLiveData(data.arbs || [])
         }
-        setLiveData(data.arbs || [])
       } catch (e) { console.error('arbs fetch:', e) }
+      if (!cancelled) timer = setTimeout(poll, 3000)
     }
-    fetchArbs()
-    const interval = setInterval(fetchArbs, 1000)
-    return () => { cancelled = true; clearInterval(interval) }
+    poll()
+    return () => { cancelled = true; clearTimeout(timer) }
   }, [])
 
   // Live in-game arbs
   useEffect(() => {
     let cancelled = false
-    const fetchLive = async () => {
+    let timer = null
+    const poll = async () => {
       try {
         const res = await fetch('/api/live-arbs', { cache: 'no-store' })
         const data = await res.json()
         if (cancelled) return
         if (!res.ok || data.error) {
           console.error('live-arbs fetch failed:', data.error || res.status)
-          return
+        } else {
+          setLiveArbsData(data.arbs || [])
         }
-        setLiveArbsData(data.arbs || [])
       } catch (e) { console.error('live-arbs fetch:', e) }
+      if (!cancelled) timer = setTimeout(poll, 3000)
     }
-    fetchLive()
-    const interval = setInterval(fetchLive, 1000)
-    return () => { cancelled = true; clearInterval(interval) }
+    poll()
+    return () => { cancelled = true; clearTimeout(timer) }
   }, [])
 
   // EV bets
   useEffect(() => {
     let cancelled = false
-    const fetchEv = async () => {
+    let timer = null
+    const poll = async () => {
       try {
         const res = await fetch('/api/ev', { cache: 'no-store' })
         const data = await res.json()
         if (!cancelled) setEvData(data.evBets || [])
       } catch (e) { console.error('ev fetch:', e) }
+      if (!cancelled) timer = setTimeout(poll, 5000)
     }
-    fetchEv()
-    const interval = setInterval(fetchEv, 2000)
-    return () => { cancelled = true; clearInterval(interval) }
+    poll()
+    return () => { cancelled = true; clearTimeout(timer) }
   }, [])
 
   // Middles
   useEffect(() => {
     let cancelled = false
-    const fetchMiddles = async () => {
+    let timer = null
+    const poll = async () => {
       try {
         const res = await fetch('/api/middles', { cache: 'no-store' })
         const data = await res.json()
         if (!cancelled) setMiddlesData(data.middles || [])
       } catch (e) { console.error('middles fetch:', e) }
+      if (!cancelled) timer = setTimeout(poll, 5000)
     }
-    fetchMiddles()
-    const interval = setInterval(fetchMiddles, 2000)
-    return () => { cancelled = true; clearInterval(interval) }
+    poll()
+    return () => { cancelled = true; clearTimeout(timer) }
   }, [])
 
   // P&L bet logs
