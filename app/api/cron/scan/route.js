@@ -44,7 +44,8 @@ export async function GET(request) {
   const startedAt = Date.now();
 
   try {
-    const { arbs, eventCount } = await scanAllLeagues(apiKey);
+    const { arbs, eventCount, scanHealthy, leaguesOk, leaguesAttempted } =
+      await scanAllLeagues(apiKey);
     const now = new Date().toISOString();
 
     if (arbs.length > 0) {
@@ -70,18 +71,28 @@ export async function GET(request) {
       if (upsertErr) throw upsertErr;
     }
 
-    // Evict stale arbs (haven't been seen in STALE_AFTER_MS).
-    const staleCutoff = new Date(Date.now() - STALE_AFTER_MS).toISOString();
-    const { error: deleteErr } = await supabase
-      .from('arb_sightings')
-      .delete()
-      .lt('last_seen_at', staleCutoff);
-    if (deleteErr) throw deleteErr;
+    // Only evict when every league fetch succeeded. If any request failed, we
+    // may have zero arbs from incomplete data — deleting would wipe the cache
+    // and "black out" the dashboard until the next good scan.
+    let staleDeleted = 0;
+    if (scanHealthy) {
+      const staleCutoff = new Date(Date.now() - STALE_AFTER_MS).toISOString();
+      const { error: deleteErr, count } = await supabase
+        .from('arb_sightings')
+        .delete({ count: 'exact' })
+        .lt('last_seen_at', staleCutoff);
+      if (deleteErr) throw deleteErr;
+      staleDeleted = count ?? 0;
+    }
 
     return Response.json({
       ok: true,
       scanned: eventCount,
       arbsFound: arbs.length,
+      scanHealthy,
+      leaguesOk,
+      leaguesAttempted,
+      stalePruned: scanHealthy ? staleDeleted : null,
       durationMs: Date.now() - startedAt,
     });
   } catch (err) {
