@@ -366,10 +366,10 @@ export default function Home() {
   // The only difference visually: live arbs show liveStatus tag instead of fmtTime.
   const renderArbRow = (a, i, { live = false } = {}) => {
     const blurred = shouldBlurArb(a)
-    return (
+    return [
       <div key={a.fingerprint || i}
         onClick={() => !blurred ? setSelectedArb(a) : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))}
-        className={`grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors ${blurred ? 'cursor-pointer hover:bg-orange-900/5' : 'cursor-pointer hover:bg-[#0f0e0b]'}`}
+        className={`arb-row border-b border-[#1e1c16] items-center transition-colors ${blurred ? 'cursor-pointer hover:bg-orange-900/5' : 'cursor-pointer hover:bg-[#0f0e0b]'} hidden md:grid px-5 py-[12px]`}
         style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 90px 100px'}}>
         <div>
           <div className="text-[13px] font-semibold mb-[4px]">{a.game}</div>
@@ -404,16 +404,53 @@ export default function Home() {
         ) : (
           <div className="text-[12px] text-[#7a8a96] font-medium">${a.sA} / ${a.sB}</div>
         )}
+      </div>,
+      <div key={`m-${a.fingerprint || i}`}
+        onClick={() => !blurred ? setSelectedArb(a) : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))}
+        className={`md:hidden flex flex-col gap-2 px-4 py-3 border-b border-[#1e1c16] transition-colors ${blurred ? 'cursor-pointer hover:bg-orange-900/5' : 'cursor-pointer hover:bg-[#0f0e0b]'}`}>
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-semibold mb-1 truncate">{a.game}</div>
+            <div className="flex items-center gap-[5px] flex-wrap">
+              <span className={SPORT_TAG}>{(a.sport || '').toUpperCase()}</span>
+              {a.market && <span className={MARKET_TAG}>{a.market}</span>}
+              {live ? <span className={LIVE_TAG}>● {a.liveStatus || 'LIVE'}</span> : <span className="text-[10px] text-[#5a6a78] font-medium">{fmtTime(a.time)}</span>}
+            </div>
+          </div>
+          <div className="text-right flex-shrink-0 ml-3">
+            <div className="text-[18px] font-black text-[#ff6b1a] leading-none">+{a.profit}%</div>
+            {renderRowAge(a)}
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <div className={`flex-1 bg-[#0f0e0b] rounded-lg p-2 ${blurred ? 'relative' : ''}`}>
+            <div className="text-[9px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bA}</div>
+            <div className={`text-[12px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betA, a.bA)}</div>
+            <div className={`text-[11px] text-[#ff6b1a] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oA}</div>
+          </div>
+          <div className={`flex-1 bg-[#0f0e0b] rounded-lg p-2 ${blurred ? 'relative' : ''}`}>
+            <div className="text-[9px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{a.bB}</div>
+            <div className={`text-[12px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betB, a.bB)}</div>
+            <div className={`text-[11px] text-[#ff6b1a] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oB}</div>
+          </div>
+        </div>
+        {blurred ? (
+          <div className="flex justify-center">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#ff6b1a] bg-orange-900/10 border border-orange-800/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
+          </div>
+        ) : (
+          <div className="text-[11px] text-[#5a6a78] font-medium">Stakes: ${a.sA} / ${a.sB}</div>
+        )}
       </div>
-    )
+    ]
   }
 
   const renderEvRow = (e, i) => {
     const blurred = shouldBlurEv(e)
-    return (
+    return [
       <div key={e.fingerprint || i}
         onClick={() => !blurred ? null : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))}
-        className={`grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors ${blurred ? 'cursor-pointer hover:bg-orange-900/5' : 'hover:bg-[#0f0e0b]'}`}
+        className={`hidden md:grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors ${blurred ? 'cursor-pointer hover:bg-orange-900/5' : 'hover:bg-[#0f0e0b]'}`}
         style={{gridTemplateColumns:'1.6fr 1.8fr 1fr 80px 80px 80px'}}>
         <div>
           <div className="text-[13px] font-semibold mb-[4px]">{e.game}</div>
@@ -440,8 +477,40 @@ export default function Home() {
         ) : (
           renderRowAge(e)
         )}
+      </div>,
+      <div key={`m-${e.fingerprint || i}`}
+        onClick={() => !blurred ? null : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))}
+        className={`md:hidden flex flex-col gap-2 px-4 py-3 border-b border-[#1e1c16] transition-colors ${blurred ? 'cursor-pointer hover:bg-orange-900/5' : 'hover:bg-[#0f0e0b]'}`}>
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-semibold mb-1 truncate">{e.game}</div>
+            <div className="flex items-center gap-[5px] flex-wrap">
+              <span className={SPORT_TAG}>{(e.sport || '').toUpperCase()}</span>
+              {e.market && <span className={MARKET_TAG}>{e.market}</span>}
+              <span className="text-[10px] text-[#5a6a78] font-medium">{fmtTime(e.time)}</span>
+            </div>
+          </div>
+          <div className="text-right flex-shrink-0 ml-3">
+            <div className="text-[18px] font-black text-emerald-400 leading-none">+{e.ev}%</div>
+            {renderRowAge(e)}
+          </div>
+        </div>
+        <div className={`bg-[#0f0e0b] rounded-lg p-2 ${blurred ? 'relative' : ''}`}>
+          <div className={`text-[12px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{e.bet}</div>
+          <div className="flex items-center gap-3 mt-1">
+            <div className={`text-[10px] text-[#7a8a96] font-semibold uppercase tracking-wide ${blurred ? 'blur-sm select-none' : ''}`}>{e.bookmaker}</div>
+            <div className={`text-[12px] text-[#ff6b1a] font-bold ${blurred ? 'blur-sm select-none' : ''}`}>{e.odds}</div>
+            <div className={`text-[10px] text-[#5a6a78] font-medium ${blurred ? 'blur-sm select-none' : ''}`}>Fair: {e.fairOdds}</div>
+            <div className="text-[10px] text-[#7a8a96] font-medium">Win: {e.winProb}%</div>
+          </div>
+        </div>
+        {blurred && (
+          <div className="flex justify-center">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#ff6b1a] bg-orange-900/10 border border-orange-800/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
+          </div>
+        )}
       </div>
-    )
+    ]
   }
 
   // ---------- P&L TRACKER ----------
@@ -546,20 +615,20 @@ export default function Home() {
     }
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-        <div className="px-5 pt-3 pb-3 bg-[#0f0e0b] border-b border-[#1e1c16] flex-shrink-0">
+        <div className="px-3 md:px-5 pt-3 pb-3 bg-[#0f0e0b] border-b border-[#1e1c16] flex-shrink-0">
           <div className="flex items-center justify-between mb-3">
-            <div className="text-[22px] font-black tracking-tight">P&amp;L Tracker</div>
+            <div className="text-[18px] md:text-[22px] font-black tracking-tight">P&amp;L Tracker</div>
             <div className="flex items-center gap-2">
               <button onClick={() => { setPnlEditId(null); setPnlForm({ game: '', bookmaker: '', betType: 'arb', odds: '', stake: '', result: 'pending', profit: '', sport: 'nba', notes: '' }); setPnlFormOpen(!pnlFormOpen) }}
-                className="px-4 py-[6px] rounded-md bg-[#ff6b1a] text-black text-[12px] font-black hover:bg-[#ff8c42] transition-all border-none cursor-pointer">
+                className="px-3 md:px-4 py-[6px] rounded-md bg-[#ff6b1a] text-black text-[11px] md:text-[12px] font-black hover:bg-[#ff8c42] transition-all border-none cursor-pointer">
                 {pnlFormOpen ? 'Cancel' : '+ Log bet'}
               </button>
-              <button onClick={() => setDashView('home')} className="border border-[#1e1c16] text-[#5a6a78] px-3 py-[6px] rounded-md text-[12px] font-medium hover:text-[#eef1f5] transition-all bg-transparent cursor-pointer">← Home</button>
+              <button onClick={() => setDashView('home')} className="border border-[#1e1c16] text-[#5a6a78] px-2 md:px-3 py-[6px] rounded-md text-[11px] md:text-[12px] font-medium hover:text-[#eef1f5] transition-all bg-transparent cursor-pointer">← Home</button>
             </div>
           </div>
 
           {/* Summary cards */}
-          <div className="grid grid-cols-5 gap-2 mb-3">
+          <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mb-3">
             {[
               [pnlStats.totalProfit >= 0 ? `+$${pnlStats.totalProfit.toFixed(2)}` : `-$${Math.abs(pnlStats.totalProfit).toFixed(2)}`, 'Net P&L', pnlStats.totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'],
               [`${pnlStats.roi}%`, 'ROI', parseFloat(pnlStats.roi) >= 0 ? 'text-emerald-400' : 'text-red-400'],
@@ -576,7 +645,7 @@ export default function Home() {
 
           {/* Breakdown by book & sport */}
           {pnlStats.total > 0 && (
-            <div className="flex gap-4 mb-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] text-[#5a6a78] font-semibold uppercase tracking-wider">By book:</span>
                 {Object.entries(pnlStats.byBook).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([book, profit]) => (
@@ -597,20 +666,20 @@ export default function Home() {
           )}
 
           {/* Filters */}
-          <div className="flex items-center gap-[5px] flex-wrap">
+          <div className="flex items-center gap-[4px] md:gap-[5px] flex-wrap">
             {['all', 'won', 'lost', 'pending', 'void'].map(f => (
               <button key={f} onClick={() => setPnlFilter(f)}
-                className={`px-[10px] py-[5px] rounded-md text-[12px] font-medium transition-all cursor-pointer border ${pnlFilter === f ? 'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${pnlFilter === f ? 'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
                 style={{fontFamily:"'Inter',sans-serif"}}>
                 {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
               </button>
             ))}
-            <div className="w-px h-4 bg-[#1e1c16] mx-1"></div>
+            <div className="w-px h-4 bg-[#1e1c16] mx-[2px] md:mx-1 hidden sm:block"></div>
             {['all', 'nba', 'nfl', 'mlb', 'nhl', 'epl', 'mls', 'atp'].map(s => (
               <button key={s} onClick={() => setPnlSportFilter(s)}
-                className={`px-[10px] py-[5px] rounded-md text-[12px] font-medium transition-all cursor-pointer border ${pnlSportFilter === s ? 'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${pnlSportFilter === s ? 'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
                 style={{fontFamily:"'Inter',sans-serif"}}>
-                {s === 'all' ? 'All Sports' : s.toUpperCase()}
+                {s === 'all' ? 'All' : s.toUpperCase()}
               </button>
             ))}
           </div>
@@ -619,9 +688,9 @@ export default function Home() {
         <div className="flex-1 overflow-y-auto">
           {/* Add/edit bet form */}
           {pnlFormOpen && (
-            <div className="mx-5 mt-4 mb-2 bg-[#1a1812] border border-[#1e1c16] rounded-xl p-5">
+            <div className="mx-3 md:mx-5 mt-4 mb-2 bg-[#1a1812] border border-[#1e1c16] rounded-xl p-4 md:p-5">
               <div className="text-[14px] font-bold mb-4">{pnlEditId ? 'Edit bet' : 'Log a bet'}</div>
-              <div className="grid grid-cols-3 gap-3 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
                 <div>
                   <label className={pnlLabelClass}>Game / Event</label>
                   <input type="text" value={pnlForm.game} onChange={e => setPnlForm({ ...pnlForm, game: e.target.value })} placeholder="Lakers vs Celtics" className={pnlInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
@@ -637,7 +706,7 @@ export default function Home() {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-3 mb-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                 <div>
                   <label className={pnlLabelClass}>Bet type</label>
                   <select value={pnlForm.betType} onChange={e => setPnlForm({ ...pnlForm, betType: e.target.value })} className={pnlInputClass} style={{fontFamily:"'Inter',sans-serif"}}>
@@ -661,7 +730,7 @@ export default function Home() {
                   <input type="number" value={pnlForm.profit} onChange={e => setPnlForm({ ...pnlForm, profit: e.target.value })} placeholder="4.50" className={pnlInputClass} style={{fontFamily:"'Inter',sans-serif"}}/>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                 <div>
                   <label className={pnlLabelClass}>Result</label>
                   <select value={pnlForm.result} onChange={e => setPnlForm({ ...pnlForm, result: e.target.value })} className={pnlInputClass} style={{fontFamily:"'Inter',sans-serif"}}>
@@ -686,7 +755,7 @@ export default function Home() {
           )}
 
           {/* Bet log table */}
-          <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.3fr 0.8fr 0.7fr 0.6fr 0.6fr 0.7fr 0.6fr 60px'}}>
+          <div className="hidden md:grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.3fr 0.8fr 0.7fr 0.6fr 0.6fr 0.7fr 0.6fr 60px'}}>
             <span>Game</span><span>Book</span><span>Type</span><span>Odds</span><span>Stake</span><span>P&amp;L</span><span>Result</span><span></span>
           </div>
 
@@ -706,8 +775,8 @@ export default function Home() {
           ) : pnlFiltered.map((b, i) => {
             const resultColors = { won: 'text-emerald-400 bg-emerald-900/10 border-emerald-800/25', lost: 'text-red-400 bg-red-900/10 border-red-800/25', pending: 'text-[#ff6b1a] bg-orange-900/10 border-orange-800/25', void: 'text-[#5a6a78] bg-[#1a1812] border-[#1e1c16]' }
             const profitColor = (b.profit || 0) > 0 ? 'text-emerald-400' : (b.profit || 0) < 0 ? 'text-red-400' : 'text-[#5a6a78]'
-            return (
-              <div key={b.id || i} className="grid px-5 py-[10px] border-b border-[#1e1c16] items-center hover:bg-[#0f0e0b] transition-colors" style={{gridTemplateColumns:'1.3fr 0.8fr 0.7fr 0.6fr 0.6fr 0.7fr 0.6fr 60px'}}>
+            return [
+              <div key={b.id || i} className="hidden md:grid px-5 py-[10px] border-b border-[#1e1c16] items-center hover:bg-[#0f0e0b] transition-colors" style={{gridTemplateColumns:'1.3fr 0.8fr 0.7fr 0.6fr 0.6fr 0.7fr 0.6fr 60px'}}>
                 <div>
                   <div className="text-[13px] font-semibold leading-tight">{b.game || '—'}</div>
                   <div className="flex items-center gap-[6px] mt-[3px]">
@@ -731,16 +800,47 @@ export default function Home() {
                   <button onClick={() => editPnlBet(b)} className="w-6 h-6 rounded flex items-center justify-center bg-transparent border border-[#1e1c16] text-[#5a6a78] text-[11px] hover:text-[#eef1f5] hover:border-[#2a2820] transition-all cursor-pointer">✎</button>
                   <button onClick={() => deletePnlBet(b.id)} className="w-6 h-6 rounded flex items-center justify-center bg-transparent border border-[#1e1c16] text-[#5a6a78] text-[11px] hover:text-red-400 hover:border-red-900 transition-all cursor-pointer">×</button>
                 </div>
+              </div>,
+              <div key={`m-${b.id || i}`} className="md:hidden flex flex-col gap-1 px-4 py-3 border-b border-[#1e1c16] hover:bg-[#0f0e0b] transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-semibold leading-tight truncate">{b.game || '—'}</div>
+                    <div className="flex items-center gap-[5px] mt-1 flex-wrap">
+                      <span className={SPORT_TAG}>{(b.sport || '').toUpperCase()}</span>
+                      <span className="text-[10px] font-semibold px-[6px] py-[2px] rounded bg-[#1a1812] border border-[#1e1c16] text-[#7a8a96] uppercase">{b.bet_type || '—'}</span>
+                      <span className="text-[10px] text-[#5a6a78] font-medium">{b.created_at ? new Date(b.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}</span>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0 ml-3">
+                    <div className={`text-[16px] font-bold ${profitColor}`}>
+                      {b.profit != null ? (b.profit >= 0 ? `+$${Number(b.profit).toFixed(2)}` : `-$${Math.abs(b.profit).toFixed(2)}`) : '—'}
+                    </div>
+                    <span className={`text-[9px] font-bold px-[5px] py-[2px] rounded-full border uppercase ${resultColors[b.result] || resultColors.pending}`}>
+                      {b.result || 'pending'}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <div className="flex items-center gap-3 text-[11px] text-[#5a6a78] font-medium">
+                    <span>{b.bookmaker || '—'}</span>
+                    <span className="text-[#ff6b1a] font-semibold">{b.odds != null ? (b.odds > 0 ? `+${b.odds}` : b.odds) : '—'}</span>
+                    <span>${b.stake || 0}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => editPnlBet(b)} className="w-6 h-6 rounded flex items-center justify-center bg-transparent border border-[#1e1c16] text-[#5a6a78] text-[11px] hover:text-[#eef1f5] hover:border-[#2a2820] transition-all cursor-pointer">✎</button>
+                    <button onClick={() => deletePnlBet(b.id)} className="w-6 h-6 rounded flex items-center justify-center bg-transparent border border-[#1e1c16] text-[#5a6a78] text-[11px] hover:text-red-400 hover:border-red-900 transition-all cursor-pointer">×</button>
+                  </div>
+                </div>
               </div>
-            )
+            ]
           })}
         </div>
 
-        <div className="h-[26px] flex-shrink-0 flex items-center gap-4 px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[11px] text-[#5a6a78] font-medium">
-          <span>{pnlBets.length} bets logged</span>
+        <div className="h-[26px] flex-shrink-0 flex items-center gap-2 md:gap-4 px-3 md:px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[10px] md:text-[11px] text-[#5a6a78] font-medium overflow-hidden">
+          <span className="flex-shrink-0">{pnlBets.length} bets</span>
           <span className="text-[#1e1c16]">|</span>
-          <span>{pnlStats.wins}W {pnlStats.losses}L {pnlStats.pending} pending</span>
-          <span className="ml-auto">P&amp;L Tracker · Pro</span>
+          <span className="truncate">{pnlStats.wins}W {pnlStats.losses}L {pnlStats.pending}P</span>
+          <span className="ml-auto flex-shrink-0">P&amp;L · Pro</span>
         </div>
       </div>
     )
@@ -864,23 +964,23 @@ export default function Home() {
 
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-        <div className="px-5 pt-3 pb-3 bg-[#0f0e0b] border-b border-[#1e1c16] flex-shrink-0">
+        <div className="px-3 md:px-5 pt-3 pb-3 bg-[#0f0e0b] border-b border-[#1e1c16] flex-shrink-0">
           <div className="flex items-center justify-between mb-3">
-            <div className="text-[22px] font-black tracking-tight">Bet Calculator</div>
-            <button onClick={() => setDashView('home')} className="border border-[#1e1c16] text-[#5a6a78] px-3 py-1 rounded-md text-[12px] font-medium hover:text-[#eef1f5] transition-all bg-transparent cursor-pointer">← Home</button>
+            <div className="text-[18px] md:text-[22px] font-black tracking-tight">Bet Calculator</div>
+            <button onClick={() => setDashView('home')} className="border border-[#1e1c16] text-[#5a6a78] px-2 md:px-3 py-1 rounded-md text-[11px] md:text-[12px] font-medium hover:text-[#eef1f5] transition-all bg-transparent cursor-pointer">← Home</button>
           </div>
-          <div className="flex items-center gap-[5px]">
+          <div className="flex items-center gap-[4px] md:gap-[5px] flex-wrap">
             {tabs.map(t => (
               <button key={t.id} onClick={() => setCalcTab(t.id)}
-                className={`flex items-center gap-2 px-3 py-[6px] rounded-md text-[12px] font-medium transition-all cursor-pointer border ${calcTab === t.id ? 'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-[5px] md:py-[6px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${calcTab === t.id ? 'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]' : 'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
                 style={{fontFamily:"'Inter',sans-serif"}}>
-                <span>{t.icon}</span>{t.label}
+                <span>{t.icon}</span><span className="hidden sm:inline">{t.label}</span><span className="sm:hidden">{t.id === 'arb' ? 'Arb' : t.id === 'convert' ? 'Convert' : t.id === 'parlay' ? 'Parlay' : 'Hold'}</span>
               </button>
             ))}
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-3 md:p-5">
           <div className="max-w-[600px] mx-auto">
 
             {calcTab === 'arb' && (
@@ -1100,18 +1200,18 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="h-[26px] flex-shrink-0 flex items-center gap-4 px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[11px] text-[#5a6a78] font-medium">
-          <span>Bet Calculator · All odds in American format</span>
-          <span className="ml-auto">FluxOdds v1.0</span>
+        <div className="h-[26px] flex-shrink-0 flex items-center gap-2 md:gap-4 px-3 md:px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[10px] md:text-[11px] text-[#5a6a78] font-medium overflow-hidden">
+          <span className="truncate">Calculator · American format</span>
+          <span className="ml-auto flex-shrink-0">FluxOdds v1.0</span>
         </div>
       </div>
     )
   }
 
   const renderMiddleRow = (m, i) => {
-    return (
+    return [
       <div key={m.fingerprint || i}
-        className="grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors hover:bg-[#0f0e0b]"
+        className="hidden md:grid px-5 py-[12px] border-b border-[#1e1c16] items-center transition-colors hover:bg-[#0f0e0b]"
         style={{gridTemplateColumns:'1.5fr 1.3fr 1.3fr 100px 90px 90px'}}>
         <div>
           <div className="text-[13px] font-semibold mb-[4px]">{m.game}</div>
@@ -1143,8 +1243,41 @@ export default function Home() {
           <div className={`text-[14px] font-bold ${m.juice <= 0 ? 'text-emerald-400' : 'text-[#ff6b1a]'}`}>{m.juice <= 0 ? 'FREE' : `${m.juice}%`}</div>
           <div className="text-[10px] text-[#5a6a78] font-medium mt-[1px]">juice</div>
         </div>
+      </div>,
+      <div key={`m-${m.fingerprint || i}`}
+        className="md:hidden flex flex-col gap-2 px-4 py-3 border-b border-[#1e1c16] transition-colors hover:bg-[#0f0e0b]">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-semibold mb-1 truncate">{m.game}</div>
+            <div className="flex items-center gap-[5px] flex-wrap">
+              <span className={SPORT_TAG}>{(m.sport || '').toUpperCase()}</span>
+              {m.market && <span className={MARKET_TAG}>{m.market}</span>}
+              <span className="text-[10px] text-[#5a6a78] font-medium">{fmtTime(m.time)}</span>
+            </div>
+          </div>
+          <div className="text-right flex-shrink-0 ml-3">
+            <div className="text-[18px] font-black text-emerald-400 leading-none">{m.gap}</div>
+            <div className="text-[9px] text-[#5a6a78] font-medium">{m.unit || 'pts'} window</div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <div className="flex-1 bg-[#0f0e0b] rounded-lg p-2">
+            <div className="text-[9px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{m.bA}</div>
+            <div className="text-[12px] font-semibold leading-tight">{m.betA}</div>
+            <div className="text-[11px] text-[#ff6b1a] font-semibold mt-[2px]">{m.oA}</div>
+          </div>
+          <div className="flex-1 bg-[#0f0e0b] rounded-lg p-2">
+            <div className="text-[9px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{m.bB}</div>
+            <div className="text-[12px] font-semibold leading-tight">{m.betB}</div>
+            <div className="text-[11px] text-[#ff6b1a] font-semibold mt-[2px]">{m.oB}</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 text-[11px]">
+          <span className="text-[#eef1f5] font-semibold">{m.lowLine}–{m.highLine} <span className="text-[#5a6a78] font-medium">{m.type === 'spread' ? 'Spread' : 'Total'}</span></span>
+          <span className={`font-bold ${m.juice <= 0 ? 'text-emerald-400' : 'text-[#ff6b1a]'}`}>{m.juice <= 0 ? 'FREE' : `${m.juice}% juice`}</span>
+        </div>
       </div>
-    )
+    ]
   }
 
   const renderMiddlesView = () => {
@@ -1164,28 +1297,28 @@ export default function Home() {
     }
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-        <div className="px-5 pt-3 pb-3 bg-[#0f0e0b] border-b border-[#1e1c16] flex-shrink-0">
+        <div className="px-3 md:px-5 pt-3 pb-3 bg-[#0f0e0b] border-b border-[#1e1c16] flex-shrink-0">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="text-[22px] font-black tracking-tight">Middles Finder</div>
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="text-[18px] md:text-[22px] font-black tracking-tight">Middles Finder</div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-[12px] text-[#5a6a78] font-medium">{filteredMiddles.length} middles</span>
-              <button onClick={() => setDashView('home')} className="border border-[#1e1c16] text-[#5a6a78] px-3 py-1 rounded-md text-[12px] font-medium hover:text-[#eef1f5] transition-all bg-transparent cursor-pointer">← Home</button>
+            <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+              <span className="text-[11px] md:text-[12px] text-[#5a6a78] font-medium">{filteredMiddles.length} middles</span>
+              <button onClick={() => setDashView('home')} className="border border-[#1e1c16] text-[#5a6a78] px-2 md:px-3 py-1 rounded-md text-[11px] md:text-[12px] font-medium hover:text-[#eef1f5] transition-all bg-transparent cursor-pointer">← Home</button>
             </div>
           </div>
-          <div className="flex items-center gap-[5px] flex-wrap">
+          <div className="flex items-center gap-[4px] md:gap-[5px] flex-wrap">
             {['all','nba','nfl','mlb','nhl','epl','mls','atp'].map(s => (
               <button key={s} onClick={() => setSport(s)}
-                className={`px-[10px] py-[5px] rounded-md text-[12px] font-medium transition-all cursor-pointer border ${sport===s?'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]':'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${sport===s?'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]':'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
                 style={{fontFamily:"'Inter',sans-serif"}}>
-                {s === 'all' ? 'All Sports' : s.toUpperCase()}
+                {s === 'all' ? 'All' : s.toUpperCase()}
               </button>
             ))}
-            <div className="ml-auto flex items-center gap-2 bg-[#1a1812] border border-[#1e1c16] rounded-md px-3 py-[5px]">
+            <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-2 bg-[#1a1812] border border-[#1e1c16] rounded-md px-3 py-[5px] mt-2 sm:mt-0">
               <span className="text-[#5a6a78] text-[12px]">⌕</span>
               <input type="text" placeholder="Search..." onChange={e => setQuery(e.target.value.toLowerCase())}
-                className="bg-transparent border-none text-[12px] text-[#eef1f5] outline-none w-[110px] font-medium"
+                className="bg-transparent border-none text-[12px] text-[#eef1f5] outline-none w-full sm:w-[110px] font-medium"
                 style={{fontFamily:"'Inter',sans-serif"}}/>
             </div>
           </div>
@@ -1196,7 +1329,7 @@ export default function Home() {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.5fr 1.3fr 1.3fr 100px 90px 90px'}}>
+          <div className="hidden md:grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.5fr 1.3fr 1.3fr 100px 90px 90px'}}>
             <span>Game</span><span>Side A</span><span>Side B</span><span>Window</span><span>Lines</span><span>Juice</span>
           </div>
           {filteredMiddles.length === 0 ? (
@@ -1208,11 +1341,11 @@ export default function Home() {
           ) : filteredMiddles.map((m, i) => renderMiddleRow(m, i))}
         </div>
 
-        <div className="h-[26px] flex-shrink-0 flex items-center gap-4 px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[11px] text-[#5a6a78] font-medium">
-          <span><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected · 40 books</span>
-          <span className="text-[#1e1c16]">|</span>
-          <span>Spreads + Totals · line gaps across books</span>
-          <span className="ml-auto">Middles Finder · Pro</span>
+        <div className="h-[26px] flex-shrink-0 flex items-center gap-2 md:gap-4 px-3 md:px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[10px] md:text-[11px] text-[#5a6a78] font-medium overflow-hidden">
+          <span className="flex-shrink-0"><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected</span>
+          <span className="text-[#1e1c16] hidden sm:inline">|</span>
+          <span className="hidden sm:inline truncate">Spreads + Totals</span>
+          <span className="ml-auto flex-shrink-0">Middles · Pro</span>
         </div>
       </div>
     )
@@ -1235,11 +1368,11 @@ export default function Home() {
     }
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-        <div className="px-5 pt-5 pb-4 bg-[#0f0e0b] border-b border-[#1e1c16]">
+        <div className="px-3 md:px-5 pt-4 md:pt-5 pb-4 bg-[#0f0e0b] border-b border-[#1e1c16]">
           <div className="max-w-[760px]">
-            <div className="text-[22px] font-black tracking-tight mb-2">Bonus Bet Converter</div>
+            <div className="text-[18px] md:text-[22px] font-black tracking-tight mb-2">Bonus Bet Converter</div>
             <p className="text-[12px] text-[#5a6a78] mb-4 leading-relaxed font-medium">
-              Got a bonus bet (free bet)? Place the bonus on a longshot at your bonus book, hedge the opposite outcome at a different book with real cash. Walk away with ~70-80% of the bonus value as guaranteed profit.
+              Place the bonus on a longshot, hedge at another book. Walk away with ~70-80% as guaranteed profit.
             </p>
             <div className="flex items-end gap-3 flex-wrap">
               <div>
@@ -1294,11 +1427,11 @@ export default function Home() {
                   <div className="px-5 pt-4 pb-2 text-[11px] text-[#5a6a78] font-medium">
                     Found <span className="text-[#ff6b1a] font-bold">{bonusResults.conversions.length}</span> conversions across <span className="text-[#eef1f5] font-bold">{bonusResults.scanned}</span> upcoming games. Sorted by best conversion rate.
                   </div>
-                  <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.5fr 1.5fr 1.5fr 100px 100px'}}>
+                  <div className="hidden md:grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.5fr 1.5fr 1.5fr 100px 100px'}}>
                     <span>Game</span><span>Bonus bet (longshot)</span><span>Hedge bet</span><span>Hedge cost</span><span>Locked profit</span>
                   </div>
-                  {bonusResults.conversions.map((c, i) => (
-                    <div key={`${c.eventID}-${i}`} className="grid px-5 py-[14px] border-b border-[#1e1c16] items-center hover:bg-[#0f0e0b] transition-colors" style={{gridTemplateColumns:'1.5fr 1.5fr 1.5fr 100px 100px'}}>
+                  {bonusResults.conversions.map((c, i) => [
+                    <div key={`${c.eventID}-${i}`} className="hidden md:grid px-5 py-[14px] border-b border-[#1e1c16] items-center hover:bg-[#0f0e0b] transition-colors" style={{gridTemplateColumns:'1.5fr 1.5fr 1.5fr 100px 100px'}}>
                       <div>
                         <div className="text-[13px] font-semibold mb-[4px]">{c.game}</div>
                         <div className="flex items-center gap-[6px] flex-wrap">
@@ -1325,8 +1458,36 @@ export default function Home() {
                         <div className="text-[18px] font-black text-emerald-400 leading-none">${c.lockedProfit.toFixed(2)}</div>
                         <div className="text-[11px] text-[#5a6a78] font-medium mt-[2px]">{c.conversionPct}% rate</div>
                       </div>
+                    </div>,
+                    <div key={`m-${c.eventID}-${i}`} className="md:hidden flex flex-col gap-2 px-4 py-3 border-b border-[#1e1c16] hover:bg-[#0f0e0b] transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-semibold mb-1 truncate">{c.game}</div>
+                          <div className="flex items-center gap-[5px] flex-wrap">
+                            <span className={SPORT_TAG}>{(c.sport || '').toUpperCase()}</span>
+                            {c.market && <span className={MARKET_TAG}>{c.market}</span>}
+                            <span className="text-[10px] text-[#5a6a78] font-medium">{fmtTime(c.time)}</span>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0 ml-3">
+                          <div className="text-[18px] font-black text-emerald-400 leading-none">${c.lockedProfit.toFixed(2)}</div>
+                          <div className="text-[10px] text-[#5a6a78] font-medium">{c.conversionPct}% rate</div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="flex-1 bg-[#0f0e0b] rounded-lg p-2">
+                          <div className="text-[9px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{c.bonusBet.book}</div>
+                          <div className="text-[12px] font-semibold leading-tight">{c.bonusBet.label}</div>
+                          <div className="text-[11px] text-[#ff6b1a] font-semibold mt-[2px]">{c.bonusBet.odds} · ${c.bonusBet.stake} bonus</div>
+                        </div>
+                        <div className="flex-1 bg-[#0f0e0b] rounded-lg p-2">
+                          <div className="text-[9px] text-[#7a8a96] font-semibold uppercase tracking-wide mb-[2px]">{c.hedge.book}</div>
+                          <div className="text-[12px] font-semibold leading-tight">{c.hedge.label}</div>
+                          <div className="text-[11px] text-[#ff6b1a] font-semibold mt-[2px]">{c.hedge.odds} · ${c.hedge.stake.toFixed(2)}</div>
+                        </div>
+                      </div>
                     </div>
-                  ))}
+                  ])}
                 </>
               )}
             </>
@@ -1340,11 +1501,11 @@ export default function Home() {
           )}
         </div>
 
-        <div className="h-[26px] flex-shrink-0 flex items-center gap-4 px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[11px] text-[#5a6a78] font-medium">
-          <span><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected · 40 books</span>
-          <span className="text-[#1e1c16]">|</span>
-          <span>SNR (stake-not-returned) lock conversion</span>
-          <span className="ml-auto">Bonus Bet Converter · Pro</span>
+        <div className="h-[26px] flex-shrink-0 flex items-center gap-2 md:gap-4 px-3 md:px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[10px] md:text-[11px] text-[#5a6a78] font-medium overflow-hidden">
+          <span className="flex-shrink-0"><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected</span>
+          <span className="text-[#1e1c16] hidden sm:inline">|</span>
+          <span className="hidden sm:inline truncate">SNR lock conversion</span>
+          <span className="ml-auto flex-shrink-0">Bonus · Pro</span>
         </div>
       </div>
     )
@@ -1359,57 +1520,58 @@ export default function Home() {
 
     return (
     <div style={{fontFamily:"'Inter',sans-serif"}} className="flex flex-col h-screen bg-[#080806] text-[#eef1f5] overflow-hidden">
-      <div className="h-[52px] flex-shrink-0 flex items-center justify-between px-5 bg-[#0f0e0b] border-b border-[#1e1c16]">
-        <div className="flex items-center gap-3">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="flex flex-col gap-[5px] justify-center w-8 h-8 border-none cursor-pointer p-1 rounded-md hover:bg-[#1a1812] bg-transparent">
+      <div className="h-[52px] flex-shrink-0 flex items-center justify-between px-3 md:px-5 bg-[#0f0e0b] border-b border-[#1e1c16]">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="flex flex-col gap-[5px] justify-center w-8 h-8 border-none cursor-pointer p-1 rounded-md hover:bg-[#1a1812] bg-transparent flex-shrink-0">
             <span className="block h-[1.5px] bg-[#5a6a78] rounded"></span>
             <span className="block h-[1.5px] bg-[#5a6a78] rounded"></span>
             <span className="block h-[1.5px] bg-[#5a6a78] rounded"></span>
           </button>
-          <span onClick={() => setDashView('home')} className="text-xl font-black tracking-tight cursor-pointer">FLUX<span className="text-[#ff6b1a]">ODDS</span></span>
-          <span className="flex items-center gap-1 bg-emerald-900/10 border border-emerald-800/20 text-emerald-400 px-3 py-[3px] rounded-full text-[11px] font-semibold">
+          <span onClick={() => setDashView('home')} className="text-lg md:text-xl font-black tracking-tight cursor-pointer flex-shrink-0">FLUX<span className="text-[#ff6b1a]">ODDS</span></span>
+          <span className="hidden sm:flex items-center gap-1 bg-emerald-900/10 border border-emerald-800/20 text-emerald-400 px-2 md:px-3 py-[3px] rounded-full text-[10px] md:text-[11px] font-semibold">
             <span className="w-[6px] h-[6px] rounded-full bg-emerald-400 animate-pulse inline-block"></span>LIVE
           </span>
-          {isPro && <span className="bg-[#ff6b1a] text-black px-2 py-[2px] rounded-full text-[10px] font-black tracking-wider">PRO</span>}
+          {isPro && <span className="bg-[#ff6b1a] text-black px-2 py-[2px] rounded-full text-[10px] font-black tracking-wider flex-shrink-0">PRO</span>}
         </div>
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-2 md:gap-5">
           {!isBonusView && !isMiddlesView && !isCalcView && !isPnlView && (
             <>
-              <div className="text-right">
+              <div className="text-right hidden sm:block">
                 <div className="text-[15px] font-bold text-emerald-400">{filtered.length}</div>
                 <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">{isEvView ? 'EV bets' : (isLiveView ? 'Live arbs' : 'Arbs today')}</div>
               </div>
-              <div className="w-px h-7 bg-[#1e1c16]"></div>
-              <div className="text-right">
+              <div className="w-px h-7 bg-[#1e1c16] hidden sm:block"></div>
+              <div className="text-right hidden md:block">
                 <div className="text-[15px] font-bold text-[#ff6b1a]">+{(isEvView ? (filtered[0]?.ev || 0) : (filtered[0]?.profit || 0))}%</div>
                 <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">{isEvView ? 'Best EV' : 'Best profit'}</div>
               </div>
-              <div className="w-px h-7 bg-[#1e1c16]"></div>
+              <div className="w-px h-7 bg-[#1e1c16] hidden md:block"></div>
             </>
           )}
           {isMiddlesView && !middlesLocked && (
             <>
-              <div className="text-right">
+              <div className="text-right hidden sm:block">
                 <div className="text-[15px] font-bold text-emerald-400">{filteredMiddles.length}</div>
                 <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">Middles</div>
               </div>
-              <div className="w-px h-7 bg-[#1e1c16]"></div>
-              <div className="text-right">
+              <div className="w-px h-7 bg-[#1e1c16] hidden sm:block"></div>
+              <div className="text-right hidden md:block">
                 <div className="text-[15px] font-bold text-[#ff6b1a]">{filteredMiddles[0]?.gap || 0}</div>
                 <div className="text-[10px] text-[#5a6a78] uppercase tracking-wider font-medium">Widest gap</div>
               </div>
-              <div className="w-px h-7 bg-[#1e1c16]"></div>
+              <div className="w-px h-7 bg-[#1e1c16] hidden md:block"></div>
             </>
           )}
-          <button onClick={() => setView('marketing')} className="border border-[#1e1c16] text-[#5a6a78] px-3 py-[5px] rounded-md text-[12px] font-medium hover:text-[#eef1f5] hover:border-[#2a2820] transition-all bg-transparent cursor-pointer">← Back to site</button>
-          <button onClick={handleSignout} className="border border-[#1e1c16] text-[#5a6a78] px-3 py-[5px] rounded-md text-[12px] font-medium hover:text-red-400 hover:border-red-900 transition-all bg-transparent cursor-pointer">Sign out</button>
-          <div className="w-7 h-7 rounded-full bg-[#ff6b1a] flex items-center justify-center text-[11px] font-black text-black cursor-pointer">{user?.email?.[0]?.toUpperCase()||'U'}</div>
+          <button onClick={() => setView('marketing')} className="hidden md:inline-flex border border-[#1e1c16] text-[#5a6a78] px-3 py-[5px] rounded-md text-[12px] font-medium hover:text-[#eef1f5] hover:border-[#2a2820] transition-all bg-transparent cursor-pointer">← Back</button>
+          <button onClick={handleSignout} className="border border-[#1e1c16] text-[#5a6a78] px-2 md:px-3 py-[5px] rounded-md text-[11px] md:text-[12px] font-medium hover:text-red-400 hover:border-red-900 transition-all bg-transparent cursor-pointer">Sign out</button>
+          <div className="w-7 h-7 rounded-full bg-[#ff6b1a] flex items-center justify-center text-[11px] font-black text-black cursor-pointer flex-shrink-0">{user?.email?.[0]?.toUpperCase()||'U'}</div>
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {sidebarOpen && <div className="md:hidden dash-sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>}
         {sidebarOpen && (
-          <div className="w-[240px] min-w-[240px] bg-[#0f0e0b] border-r border-[#1e1c16] flex flex-col overflow-y-auto flex-shrink-0">
+          <div className="dash-sidebar md:relative md:top-auto md:left-auto md:bottom-auto md:z-auto w-[240px] min-w-[240px] bg-[#0f0e0b] border-r border-[#1e1c16] flex flex-col overflow-y-auto flex-shrink-0">
             <div className="px-3 pt-5 pb-2">
               <div className="text-[10px] font-semibold tracking-widest uppercase text-[#5a6a78] px-2 mb-2">Arb Tools</div>
               {[
@@ -1466,13 +1628,13 @@ export default function Home() {
                   <span className="text-[#2a2820]">BEAT THE BOOKS.</span>
                 </h2>
                 <p className="text-[14px] text-[#5a6a78] max-w-[380px] mx-auto mb-8 leading-relaxed font-medium">Real-time arbitrage, +EV detection, and bonus bet conversion across every major sportsbook.</p>
-                <div className="grid grid-cols-3 gap-2 max-w-[540px] mx-auto mb-7">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-w-[540px] mx-auto mb-7 px-2 md:px-0">
                   {tools.map(t => (
                     <div key={t.id} onClick={() => openTool(t.name)}
                       className={`bg-[#0f0e0b] border rounded-xl p-3 cursor-pointer text-left transition-all hover:-translate-y-[2px] relative overflow-hidden ${t.id==='live'||t.id==='ev'?'border-orange-800/25 bg-orange-900/5':'border-[#1e1c16] hover:border-[#2a2820] hover:bg-[#1a1812]'}`}>
                       <div className="text-[18px] mb-2">{t.icon}</div>
-                      <div className="text-[12px] font-bold text-[#eef1f5] mb-[3px]">{t.name}</div>
-                      <div className="text-[11px] text-[#5a6a78] leading-snug font-medium">{t.desc}</div>
+                      <div className="text-[11px] md:text-[12px] font-bold text-[#eef1f5] mb-[3px]">{t.name}</div>
+                      <div className="text-[10px] md:text-[11px] text-[#5a6a78] leading-snug font-medium">{t.desc}</div>
                       {t.badge && <span className="absolute top-2 right-2 text-[8px] font-semibold px-[5px] py-[2px] rounded-full bg-[#1e1c16] border border-[#2a2820] text-[#5a6a78]">{t.badge}</span>}
                     </div>
                   ))}
@@ -1481,11 +1643,11 @@ export default function Home() {
                   View Top Arbs <span className="text-[16px]">→</span>
                 </button>
               </div>
-              <div className="absolute bottom-0 left-0 right-0 h-[25px] flex items-center gap-4 px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[11px] text-[#5a6a78] font-medium z-10">
-                <span><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected · 40 books</span>
-                <span className="text-[#1e1c16]">|</span>
-                <span>Polling every 1s</span>
-                <span className="ml-auto">FluxOdds v1.0</span>
+              <div className="absolute bottom-0 left-0 right-0 h-[25px] flex items-center gap-2 md:gap-4 px-3 md:px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[10px] md:text-[11px] text-[#5a6a78] font-medium z-10 overflow-hidden">
+                <span className="flex-shrink-0"><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected</span>
+                <span className="text-[#1e1c16] hidden sm:inline">|</span>
+                <span className="hidden sm:inline">Polling every 1s</span>
+                <span className="ml-auto flex-shrink-0">FluxOdds v1.0</span>
               </div>
             </div>
           ) : isPnlView ? (
@@ -1498,37 +1660,37 @@ export default function Home() {
             renderBonusView()
           ) : (
             <div className="flex flex-col flex-1 overflow-hidden">
-              <div className="px-5 pt-3 pb-3 bg-[#0f0e0b] border-b border-[#1e1c16] flex-shrink-0">
+              <div className="px-3 md:px-5 pt-3 pb-3 bg-[#0f0e0b] border-b border-[#1e1c16] flex-shrink-0">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="text-[22px] font-black tracking-tight">{toolName}</div>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="text-[18px] md:text-[22px] font-black tracking-tight truncate">{toolName}</div>
                     {isLiveView && <span className={LIVE_TAG}>● Live in-play</span>}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[12px] text-[#5a6a78] font-medium">{filtered.length} opportunities</span>
-                    <button onClick={() => setDashView('home')} className="border border-[#1e1c16] text-[#5a6a78] px-3 py-1 rounded-md text-[12px] font-medium hover:text-[#eef1f5] transition-all bg-transparent cursor-pointer">← Home</button>
+                  <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+                    <span className="text-[11px] md:text-[12px] text-[#5a6a78] font-medium">{filtered.length} opps</span>
+                    <button onClick={() => setDashView('home')} className="border border-[#1e1c16] text-[#5a6a78] px-2 md:px-3 py-1 rounded-md text-[11px] md:text-[12px] font-medium hover:text-[#eef1f5] transition-all bg-transparent cursor-pointer">← Home</button>
                   </div>
                 </div>
-                <div className="flex items-center gap-[5px] flex-wrap">
+                <div className="flex items-center gap-[4px] md:gap-[5px] flex-wrap">
                   {['all','nba','nfl','mlb','nhl','epl','mls','atp'].map(s => (
                     <button key={s} onClick={() => setSport(s)}
-                      className={`px-[10px] py-[5px] rounded-md text-[12px] font-medium transition-all cursor-pointer border ${sport===s?'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]':'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                      className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${sport===s?'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]':'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
                       style={{fontFamily:"'Inter',sans-serif"}}>
-                      {s === 'all' ? 'All Sports' : s.toUpperCase()}
+                      {s === 'all' ? 'All' : s.toUpperCase()}
                     </button>
                   ))}
-                  <div className="w-px h-4 bg-[#1e1c16] mx-1"></div>
+                  <div className="w-px h-4 bg-[#1e1c16] mx-[2px] md:mx-1 hidden sm:block"></div>
                   {[0,1,2,3].map(m => (
                     <button key={m} onClick={() => setMinP(m)}
-                      className={`px-[10px] py-[5px] rounded-md text-[12px] font-medium transition-all cursor-pointer border ${minP===m?'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]':'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
+                      className={`px-[7px] md:px-[10px] py-[4px] md:py-[5px] rounded-md text-[11px] md:text-[12px] font-medium transition-all cursor-pointer border ${minP===m?'bg-orange-900/10 border-orange-800/25 text-[#ff6b1a]':'bg-[#1a1812] border-[#1e1c16] text-[#5a6a78] hover:text-[#eef1f5]'}`}
                       style={{fontFamily:"'Inter',sans-serif"}}>
                       {m === 0 ? 'Any %' : `${m}%+`}
                     </button>
                   ))}
-                  <div className="ml-auto flex items-center gap-2 bg-[#1a1812] border border-[#1e1c16] rounded-md px-3 py-[5px]">
+                  <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-2 bg-[#1a1812] border border-[#1e1c16] rounded-md px-3 py-[5px] mt-2 sm:mt-0">
                     <span className="text-[#5a6a78] text-[12px]">⌕</span>
                     <input type="text" placeholder="Search..." onChange={e => setQuery(e.target.value.toLowerCase())}
-                      className="bg-transparent border-none text-[12px] text-[#eef1f5] outline-none w-[110px] font-medium"
+                      className="bg-transparent border-none text-[12px] text-[#eef1f5] outline-none w-full sm:w-[110px] font-medium"
                       style={{fontFamily:"'Inter',sans-serif"}}/>
                   </div>
                 </div>
@@ -1549,7 +1711,7 @@ export default function Home() {
               <div className="flex-1 overflow-y-auto">
                 {isEvView ? (
                   <>
-                    <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.6fr 1.8fr 1fr 80px 80px 80px'}}>
+                    <div className="hidden md:grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.6fr 1.8fr 1fr 80px 80px 80px'}}>
                       <span>Game</span><span>Bet / Book</span><span>Odds / Fair</span><span>EV %</span><span>Win %</span><span>Age</span>
                     </div>
                     {filtered.length === 0 ? (
@@ -1562,7 +1724,7 @@ export default function Home() {
                   </>
                 ) : (
                   <>
-                    <div className="grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 90px 100px'}}>
+                    <div className="hidden md:grid text-[11px] font-semibold uppercase text-[#5a6a78] px-5 py-[7px] border-b border-[#1e1c16] bg-[#0f0e0b] sticky top-0 z-10 tracking-wide" style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 90px 100px'}}>
                       <span>Game</span><span>Bet A</span><span>Bet B</span><span>Profit / Age</span><span>Stakes ($100)</span>
                     </div>
                     {filtered.length === 0 ? (
@@ -1578,11 +1740,11 @@ export default function Home() {
                 )}
               </div>
 
-              <div className="h-[26px] flex-shrink-0 flex items-center gap-4 px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[11px] text-[#5a6a78] font-medium">
-                <span><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected · 40 books</span>
-                <span className="text-[#1e1c16]">|</span>
-                {isEvView ? <span>Fair line: Pinnacle (de-vigged)</span> : isLiveView ? <span>In-play games only · scanning every 5s</span> : <span>Polling every 1s</span>}
-                <span className="ml-auto">{toolName} · {isEvView ? '+EV' : 'Highest profit first'}</span>
+              <div className="h-[26px] flex-shrink-0 flex items-center gap-2 md:gap-4 px-3 md:px-5 bg-[#0f0e0b] border-t border-[#1e1c16] text-[10px] md:text-[11px] text-[#5a6a78] font-medium overflow-hidden">
+                <span className="flex-shrink-0"><span className="inline-block w-[5px] h-[5px] rounded-full bg-emerald-400 mr-1 animate-pulse"></span>Connected</span>
+                <span className="text-[#1e1c16] hidden sm:inline">|</span>
+                {isEvView ? <span className="hidden sm:inline truncate">Pinnacle de-vigged</span> : isLiveView ? <span className="hidden sm:inline truncate">In-play · every 5s</span> : <span className="hidden sm:inline truncate">Polling every 1s</span>}
+                <span className="ml-auto flex-shrink-0 truncate">{toolName}</span>
               </div>
             </div>
           )}
@@ -1592,7 +1754,7 @@ export default function Home() {
       {selectedArb && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSelectedArb(null)}></div>
-          <div className="fixed right-0 top-0 bottom-0 w-[360px] bg-[#0f0e0b] border-l border-[#1e1c16] z-50 flex flex-col" style={{fontFamily:"'Inter',sans-serif"}}>
+          <div className="arb-detail-panel fixed right-0 top-0 bottom-0 w-full sm:w-[360px] bg-[#0f0e0b] border-l border-[#1e1c16] z-50 flex flex-col" style={{fontFamily:"'Inter',sans-serif"}}>
             <div className="flex items-start justify-between p-4 border-b border-[#1e1c16]">
               <div>
                 <div className="text-[14px] font-bold mb-1">{selectedArb.game}</div>
@@ -1700,14 +1862,14 @@ export default function Home() {
         </div>
       </div>
 
-      <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-12 h-[60px] border-b border-[#1e1c16] backdrop-blur-md" style={{background:'rgba(8,8,6,0.92)'}}>
+      <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-4 md:px-12 h-[60px] border-b border-[#1e1c16] backdrop-blur-md" style={{background:'rgba(8,8,6,0.92)'}}>
         <div className="flex items-center gap-3">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="flex flex-col gap-[5px] justify-center w-8 h-8 bg-transparent border-none cursor-pointer p-1 rounded-md hover:bg-[#1a1812]">
             <span className="block h-[1.5px] bg-[#5a6a78] rounded"></span>
             <span className="block h-[1.5px] bg-[#5a6a78] rounded"></span>
             <span className="block h-[1.5px] bg-[#5a6a78] rounded"></span>
           </button>
-          <a href="#home" className="text-[22px] font-black tracking-tight no-underline text-[#eef1f5]">FLUX<span className="text-[#ff6b1a]">ODDS</span></a>
+          <a href="#home" className="text-[20px] md:text-[22px] font-black tracking-tight no-underline text-[#eef1f5]">FLUX<span className="text-[#ff6b1a]">ODDS</span></a>
         </div>
         <div className="hidden md:flex items-center gap-7">
           {['#how','#features','#pricing','#faq','#contact'].map((h,i) => (
@@ -1719,19 +1881,19 @@ export default function Home() {
         <div className="flex items-center gap-2">
           {user ? (
             <>
-              <button onClick={launchDash} className="px-5 py-[8px] rounded-lg bg-[#ff6b1a] text-black text-[13px] font-bold hover:bg-[#ff8c42] transition-all border-none cursor-pointer">Dashboard →</button>
-              <button onClick={handleSignout} className="px-4 py-[7px] rounded-lg border border-[#1e1c16] text-[#5a6a78] text-[13px] font-medium hover:border-red-800 hover:text-red-400 transition-all bg-transparent cursor-pointer">Sign out</button>
+              <button onClick={launchDash} className="px-3 md:px-5 py-[8px] rounded-lg bg-[#ff6b1a] text-black text-[12px] md:text-[13px] font-bold hover:bg-[#ff8c42] transition-all border-none cursor-pointer">Dashboard →</button>
+              <button onClick={handleSignout} className="hidden md:inline-flex px-4 py-[7px] rounded-lg border border-[#1e1c16] text-[#5a6a78] text-[13px] font-medium hover:border-red-800 hover:text-red-400 transition-all bg-transparent cursor-pointer">Sign out</button>
             </>
           ) : (
             <>
-              <button onClick={() => { setLoginTab('login'); setLoginOpen(true) }} className="px-4 py-[7px] rounded-lg border border-[#1e1c16] text-[#5a6a78] text-[13px] font-medium hover:border-[#ff6b1a] hover:text-[#ff6b1a] transition-all bg-transparent cursor-pointer">Log in</button>
-              <button onClick={launchDash} className="px-5 py-[8px] rounded-lg bg-[#ff6b1a] text-black text-[13px] font-bold hover:bg-[#ff8c42] transition-all border-none cursor-pointer">Launch App →</button>
+              <button onClick={() => { setLoginTab('login'); setLoginOpen(true) }} className="hidden md:inline-flex px-4 py-[7px] rounded-lg border border-[#1e1c16] text-[#5a6a78] text-[13px] font-medium hover:border-[#ff6b1a] hover:text-[#ff6b1a] transition-all bg-transparent cursor-pointer">Log in</button>
+              <button onClick={launchDash} className="px-3 md:px-5 py-[8px] rounded-lg bg-[#ff6b1a] text-black text-[12px] md:text-[13px] font-bold hover:bg-[#ff8c42] transition-all border-none cursor-pointer">Launch App →</button>
             </>
           )}
         </div>
       </nav>
 
-      <section id="home" className="min-h-screen flex flex-col items-center justify-center text-center px-12 pt-[110px] pb-20 relative overflow-hidden">
+      <section id="home" className="min-h-screen flex flex-col items-center justify-center text-center px-5 md:px-12 pt-[90px] md:pt-[110px] pb-16 md:pb-20 relative overflow-hidden">
         <div className="absolute inset-0" style={{backgroundImage:'linear-gradient(rgba(255,107,26,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,107,26,.03) 1px,transparent 1px)',backgroundSize:'58px 58px',maskImage:'radial-gradient(ellipse 80% 70% at 50% 50%,black 20%,transparent 100%)'}}></div>
         <div className="absolute bottom-0 left-0 right-0 h-[280px] pointer-events-none" style={{background:'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(255,107,26,.18) 0%, rgba(255,80,0,.08) 40%, transparent 70%)'}}></div>
         <div className="relative z-10">
@@ -1745,15 +1907,15 @@ export default function Home() {
           <p className="text-[#5a6a78] font-medium max-w-[500px] mx-auto mt-5 mb-11 leading-relaxed" style={{fontSize:'clamp(15px,1.6vw,18px)'}}>
             Live arbs during in-game action, prematch arbs for upcoming games, +EV bets against Pinnacle de-vigged sharp lines, and a bonus bet converter — all in one dashboard.
           </p>
-          <div className="flex items-center gap-3 justify-center">
-            <button onClick={launchDash} className="px-9 py-4 rounded-xl bg-[#ff6b1a] text-black text-[15px] font-black hover:bg-[#ff8c42] transition-all hover:-translate-y-[2px] border-none cursor-pointer">Launch FluxOdds →</button>
-            <a href="#how" className="px-9 py-4 rounded-xl border border-[#1e1c16] text-[#eef1f5] text-[15px] font-semibold hover:border-[#ff6b1a] hover:text-[#ff6b1a] transition-all no-underline">How it works</a>
+          <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
+            <button onClick={launchDash} className="w-full sm:w-auto px-9 py-4 rounded-xl bg-[#ff6b1a] text-black text-[15px] font-black hover:bg-[#ff8c42] transition-all hover:-translate-y-[2px] border-none cursor-pointer">Launch FluxOdds →</button>
+            <a href="#how" className="w-full sm:w-auto px-9 py-4 rounded-xl border border-[#1e1c16] text-[#eef1f5] text-[15px] font-semibold hover:border-[#ff6b1a] hover:text-[#ff6b1a] transition-all no-underline text-center">How it works</a>
           </div>
-          <div className="flex items-center gap-11 mt-16 justify-center">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-11 mt-12 md:mt-16 justify-center">
             {[['40+','Sportsbooks'],['+5.1%','Best live arb'],['<1s','Detection'],['24/7','Always on']].map(([n,l],i) => (
               <div key={i} className="text-center">
-                <div className="text-[36px] font-black text-[#ff6b1a] leading-none">{n}</div>
-                <div className="text-[11px] text-[#5a6a78] font-semibold tracking-wider uppercase mt-1">{l}</div>
+                <div className="text-[28px] md:text-[36px] font-black text-[#ff6b1a] leading-none">{n}</div>
+                <div className="text-[10px] md:text-[11px] text-[#5a6a78] font-semibold tracking-wider uppercase mt-1">{l}</div>
               </div>
             ))}
           </div>
@@ -1774,7 +1936,7 @@ export default function Home() {
         </div>
       </div>
 
-      <section id="how" className="py-[90px] px-12 bg-[#0f0e0b] border-t border-b border-[#1e1c16]">
+      <section id="how" className="py-16 md:py-[90px] px-5 md:px-12 bg-[#0f0e0b] border-t border-b border-[#1e1c16]">
         <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">How it works</div>
         <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>THREE STEPS.<br/>PURE PROFIT.</h2>
         <p className="text-[#5a6a78] text-[17px] max-w-[500px] leading-relaxed font-medium">No spreadsheets. No manual odds checking. FluxOdds does the heavy lifting so you can focus on placing bets.</p>
@@ -1793,11 +1955,11 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="features" className="py-[90px] px-12 bg-[#080806]">
+      <section id="features" className="py-16 md:py-[90px] px-5 md:px-12 bg-[#080806]">
         <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">Features</div>
         <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>EVERYTHING YOU<br/>NEED TO WIN.</h2>
         <p className="text-[#5a6a78] text-[17px] max-w-[500px] leading-relaxed font-medium">Built for beginners and pros. All in one dashboard.</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 mt-14 border border-[#1e1c16] rounded-xl overflow-hidden" style={{gap:'1px',background:'#1e1c16'}}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 mt-10 md:mt-14 border border-[#1e1c16] rounded-xl overflow-hidden" style={{gap:'1px',background:'#1e1c16'}}>
           {[
             {icon:'⚡',t:'Live arb finder',d:'In-progress games scanned every 5s. Surface arbs the moment they appear with current period/score context.'},
             {icon:'🗓',t:'Prematch arbs',d:'Pre-game arbs across 40+ books with profit %, exact stakes, and direct links.'},
@@ -1806,7 +1968,7 @@ export default function Home() {
             {icon:'🔔',t:'Instant alerts',d:'Set a minimum profit/EV threshold and get notified the instant a bet hits.'},
             {icon:'📊',t:'P&L tracker',d:'Log every bet and track your running profit across books, sports, and time.'},
           ].map((f,i) => (
-            <div key={i} className="bg-[#080806] p-8 hover:bg-[#0f0e0b] transition-colors">
+            <div key={i} className="bg-[#080806] p-6 md:p-8 hover:bg-[#0f0e0b] transition-colors">
               <div className="w-[42px] h-[42px] rounded-xl bg-orange-900/10 border border-orange-800/15 flex items-center justify-center text-[18px] mb-5">{f.icon}</div>
               <h3 className="text-[17px] font-bold mb-2">{f.t}</h3>
               <p className="text-[#5a6a78] text-[13px] leading-[1.7] font-medium">{f.d}</p>
@@ -1815,11 +1977,11 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="pricing" className="py-[90px] px-12 bg-[#080806]">
+      <section id="pricing" className="py-16 md:py-[90px] px-5 md:px-12 bg-[#080806]">
         <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">Pricing</div>
         <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(32px,4vw,56px)'}}>PAY FOR WHAT<br/>YOU WIN WITH.</h2>
         <p className="text-[#5a6a78] text-[17px] max-w-[500px] leading-relaxed font-medium">Start free. Scale when you're profitable. No contracts, cancel anytime.</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-14">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-10 md:mt-14">
           {[
             {name:'Free',price:'0',desc:'Discover FluxOdds and start finding arbs at no cost.',btn:'Get started free',btnStyle:'border border-[#1e1c16] text-[#eef1f5] hover:border-[#ff6b1a] hover:text-[#ff6b1a]',featured:false,
               feats:['Prematch arbs capped at 2%','+EV bets capped at 1.5%','Live arb access','All sports access','Basic bet calculator'],
@@ -1829,7 +1991,7 @@ export default function Home() {
             {name:'Pro Day Pass',price:'15',desc:'All Pro features for 24 hours. Perfect for occasional arbers.',btn:'Coming Soon',btnStyle:'border border-[#1e1c16] text-[#5a6a78]',featured:false,badge:'Coming soon',
               feats:['All Pro features','24 hour access','One-time purchase','No subscription needed'],off:[]},
           ].map((p,i) => (
-            <div key={i} className={`relative rounded-xl p-9 transition-all hover:-translate-y-[3px] ${p.featured?'border border-[#ff6b1a] bg-[#0f0e0b]':'border border-[#1e1c16] bg-[#0f0e0b] hover:border-[#2a2820]'}`}>
+            <div key={i} className={`relative rounded-xl p-6 md:p-9 transition-all hover:-translate-y-[3px] ${p.featured?'border border-[#ff6b1a] bg-[#0f0e0b]':'border border-[#1e1c16] bg-[#0f0e0b] hover:border-[#2a2820]'}`}>
               {p.badge && <div className="absolute -top-[13px] left-1/2 -translate-x-1/2 bg-[#ff6b1a] text-black px-4 py-[3px] rounded-full text-[10px] font-black tracking-wider uppercase whitespace-nowrap">{p.badge}</div>}
               <div className="text-[13px] font-semibold text-[#5a6a78] tracking-wider uppercase mb-3">{p.name}</div>
               <div className="text-[58px] font-black leading-none mb-1"><sup className="text-[24px]">$</sup>{p.price}<span className="text-[16px] text-[#5a6a78] font-medium">/mo</span></div>
@@ -1844,7 +2006,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="faq" className="py-[90px] px-12 bg-[#0f0e0b] border-t border-b border-[#1e1c16]">
+      <section id="faq" className="py-16 md:py-[90px] px-5 md:px-12 bg-[#0f0e0b] border-t border-b border-[#1e1c16]">
         <div className="max-w-[720px] mx-auto">
           <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">FAQ</div>
           <h2 className="font-black leading-none tracking-tight mb-14" style={{fontSize:'clamp(32px,4vw,56px)'}}>GOT QUESTIONS?</h2>
@@ -1864,25 +2026,25 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="py-[90px] px-12 text-center bg-[#080806] border-t border-[#1e1c16] relative overflow-hidden">
+      <div className="py-16 md:py-[90px] px-5 md:px-12 text-center bg-[#080806] border-t border-[#1e1c16] relative overflow-hidden">
         <div className="absolute inset-0" style={{background:'radial-gradient(ellipse 55% 80% at 50% 50%,rgba(255,107,26,.06) 0%,transparent 70%)'}}></div>
         <div className="relative z-10">
           <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">Ready?</div>
           <h2 className="font-black leading-none tracking-tight mb-4" style={{fontSize:'clamp(36px,6vw,80px)'}}>STOP GAMBLING.<br/><span className="text-[#ff6b1a]">START WINNING.</span></h2>
           <p className="text-[#5a6a78] text-[17px] max-w-[480px] mx-auto mb-10 leading-relaxed font-medium">Join thousands of bettors using FluxOdds to find guaranteed profit every day.</p>
-          <div className="flex items-center gap-3 justify-center">
-            <button onClick={launchDash} className="px-9 py-4 rounded-xl bg-[#ff6b1a] text-black text-[15px] font-black hover:bg-[#ff8c42] transition-all hover:-translate-y-[2px] border-none cursor-pointer">Launch FluxOdds →</button>
-            <a href="#pricing" className="px-9 py-4 rounded-xl border border-[#1e1c16] text-[#eef1f5] text-[15px] font-semibold hover:border-[#ff6b1a] hover:text-[#ff6b1a] transition-all no-underline">View pricing</a>
+          <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
+            <button onClick={launchDash} className="w-full sm:w-auto px-9 py-4 rounded-xl bg-[#ff6b1a] text-black text-[15px] font-black hover:bg-[#ff8c42] transition-all hover:-translate-y-[2px] border-none cursor-pointer">Launch FluxOdds →</button>
+            <a href="#pricing" className="w-full sm:w-auto px-9 py-4 rounded-xl border border-[#1e1c16] text-[#eef1f5] text-[15px] font-semibold hover:border-[#ff6b1a] hover:text-[#ff6b1a] transition-all no-underline text-center">View pricing</a>
           </div>
         </div>
       </div>
 
-      <section id="contact" className="py-[90px] px-12 bg-[#080806]">
+      <section id="contact" className="py-16 md:py-[90px] px-5 md:px-12 bg-[#080806]">
         <div className="text-center mb-14">
           <div className="text-[11px] font-semibold tracking-widest uppercase text-[#ff6b1a] mb-3">Contact</div>
           <h2 className="font-black leading-none tracking-tight" style={{fontSize:'clamp(32px,4vw,56px)'}}>GET IN TOUCH.</h2>
         </div>
-        <div className="max-w-[500px] mx-auto bg-[#0f0e0b] border border-[#1e1c16] rounded-xl p-11">
+        <div className="max-w-[500px] mx-auto bg-[#0f0e0b] border border-[#1e1c16] rounded-xl p-6 md:p-11">
           {contactSent ? (
             <div className="text-center py-8">
               <div className="text-[32px] mb-3">✓</div>
@@ -1907,9 +2069,9 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="bg-[#0f0e0b] border-t border-[#1e1c16] px-12 py-10 flex items-center justify-between flex-wrap gap-5">
+      <footer className="bg-[#0f0e0b] border-t border-[#1e1c16] px-5 md:px-12 py-8 md:py-10 flex flex-col md:flex-row items-center justify-between gap-5">
         <div className="text-[22px] font-black tracking-tight">FLUX<span className="text-[#ff6b1a]">ODDS</span></div>
-        <div className="flex gap-6">
+        <div className="flex flex-wrap justify-center gap-4 md:gap-6">
           {[['#how','How it works'],['#features','Features'],['#pricing','Pricing'],['#faq','FAQ'],['#contact','Contact']].map(([h,l]) => (
             <a key={h} href={h} className="text-[#5a6a78] text-[13px] no-underline hover:text-[#eef1f5] transition-colors font-medium">{l}</a>
           ))}
