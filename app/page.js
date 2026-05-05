@@ -51,12 +51,23 @@ const FREE_EV_CAP = 1.5
 
 const BookLink = ({ bookId, className }) => {
   const url = getSportsbookUrl(bookId)
-  if (!url) return <span className={className}>{bookId}</span>
+  const iconSrc = bookId ? `/sportsbooks/${bookId.toLowerCase()}.svg` : null
+  if (!url) {
+    return (
+      <span className={`${className} flex items-center gap-[5px]`}>
+        {iconSrc && <img src={iconSrc} alt="" width={16} height={16} className="rounded-[3px] flex-shrink-0" />}
+        {bookId}
+      </span>
+    )
+  }
   return (
     <a href={url} target="_blank" rel="noopener noreferrer"
-      className={`${className} no-underline hover:text-[#e87028] transition-colors cursor-pointer`}
+      className={`${className} no-underline hover:text-[#e87028] transition-colors cursor-pointer flex items-center gap-[5px]`}
       onClick={(e) => e.stopPropagation()}
-    >{bookId}</a>
+    >
+      {iconSrc && <img src={iconSrc} alt="" width={16} height={16} className="rounded-[3px] flex-shrink-0 hover:opacity-80 transition-opacity" />}
+      {bookId}
+    </a>
   )
 }
 
@@ -458,12 +469,12 @@ export default function Home() {
           </div>
         </div>
         <div className={blurred ? 'relative' : ''}>
-          <BookLink bookId={a.bA} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
+          <BookLink bookId={a.bA} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]" />
           <div className={`text-[13px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betA, a.bA)}</div>
           <div className={`text-[12px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oA}</div>
         </div>
         <div className={blurred ? 'relative' : ''}>
-          <BookLink bookId={a.bB} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
+          <BookLink bookId={a.bB} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]" />
           <div className={`text-[13px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betB, a.bB)}</div>
           <div className={`text-[12px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oB}</div>
         </div>
@@ -498,12 +509,12 @@ export default function Home() {
         </div>
         <div className="flex gap-2">
           <div className={`flex-1 bg-[#0c0c0e] rounded-lg p-2 ${blurred ? 'relative' : ''}`}>
-            <BookLink bookId={a.bA} className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
+            <BookLink bookId={a.bA} className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]" />
             <div className={`text-[12px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betA, a.bA)}</div>
             <div className={`text-[11px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oA}</div>
           </div>
           <div className={`flex-1 bg-[#0c0c0e] rounded-lg p-2 ${blurred ? 'relative' : ''}`}>
-            <BookLink bookId={a.bB} className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
+            <BookLink bookId={a.bB} className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]" />
             <div className={`text-[12px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betB, a.bB)}</div>
             <div className={`text-[11px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oB}</div>
           </div>
@@ -536,7 +547,7 @@ export default function Home() {
         </div>
         <div className={blurred ? 'relative' : ''}>
           <div className={`text-[13px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{e.bet}</div>
-          <BookLink bookId={e.bookmaker} className={`text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mt-[2px] block ${blurred ? 'blur-sm select-none' : ''}`} />
+          <BookLink bookId={e.bookmaker} className={`text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`} />
         </div>
         <div className={blurred ? 'blur-sm select-none' : ''}>
           <div className="text-[14px] font-bold text-[#e87028]">{e.odds}</div>
@@ -1296,12 +1307,12 @@ export default function Home() {
           </div>
         </div>
         <div>
-          <BookLink bookId={m.bA} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
+          <BookLink bookId={m.bA} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]" />
           <div className="text-[13px] font-semibold leading-tight">{m.betA}</div>
           <div className="text-[12px] text-[#e87028] font-semibold mt-[2px]">{m.oA}</div>
         </div>
         <div>
-          <BookLink bookId={m.bB} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
+          <BookLink bookId={m.bB} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]" />
           <div className="text-[13px] font-semibold leading-tight">{m.betB}</div>
           <div className="text-[12px] text-[#e87028] font-semibold mt-[2px]">{m.oB}</div>
         </div>
@@ -1336,12 +1347,12 @@ export default function Home() {
         </div>
         <div className="flex gap-2">
           <div className="flex-1 bg-[#0c0c0e] rounded-lg p-2">
-            <BookLink bookId={m.bA} className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
+            <BookLink bookId={m.bA} className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]" />
             <div className="text-[12px] font-semibold leading-tight">{m.betA}</div>
             <div className="text-[11px] text-[#e87028] font-semibold mt-[2px]">{m.oA}</div>
           </div>
           <div className="flex-1 bg-[#0c0c0e] rounded-lg p-2">
-            <BookLink bookId={m.bB} className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
+            <BookLink bookId={m.bB} className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]" />
             <div className="text-[12px] font-semibold leading-tight">{m.betB}</div>
             <div className="text-[11px] text-[#e87028] font-semibold mt-[2px]">{m.oB}</div>
           </div>
@@ -1953,7 +1964,7 @@ export default function Home() {
               ].map((b,i) => (
                 <div key={i} className="flex items-start justify-between bg-[#121214] border border-[#27272a] rounded-xl px-3 py-[10px] mb-[5px]">
                   <div className="flex-1 min-w-0 pr-2">
-                    <BookLink bookId={b.name} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
+                    <BookLink bookId={b.name} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]" />
                     <div className="text-[13px] font-semibold leading-tight">{b.bet}</div>
                   </div>
                   <div className="text-right flex-shrink-0">
