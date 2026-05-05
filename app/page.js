@@ -452,124 +452,106 @@ export default function Home() {
   const renderArbRow = (a, i, { live = false } = {}) => {
     const blurred = shouldBlurArb(a)
     const handleClick = () => !blurred ? setSelectedArb(a) : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))
-    const ageSec = a.firstSeenAt ? liveAgeSeconds(a.firstSeenAt) : null
-    const isNew = ageSec != null && ageSec < 30
-    const freshness = ageSec != null ? Math.max(0, 1 - ageSec / 600) : 0
 
-    const ArbBookLogo = ({ bookId }) => {
+    const BOOK_COLORS = {
+      fanduel: '#1493FF', draftkings: '#53D337', betmgm: '#B89968',
+      caesars: '#C9A96E', espnbet: '#D8232A', hardrockbet: '#D8232A',
+      fanatics: '#0C2340', pinnacle: '#D8232A', betrivers: '#0066B3',
+      ballybet: '#D8232A', pointsbet: '#D8232A',
+    }
+
+    const renderBookBadge = (bookId) => {
       const src = bookId ? `/sportsbooks/${bookId.toLowerCase()}.svg` : null
       const letters = bookId ? bookId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase() : '??'
+      const bg = BOOK_COLORS[bookId?.toLowerCase()] || '#71717a'
+      if (src) {
+        return <img src={src} alt={bookId} className={`w-8 h-8 rounded-md object-contain ${blurred ? 'blur-sm select-none' : ''}`} />
+      }
       return (
-        <div className="w-8 h-8 rounded-lg bg-[#18181b] border border-[#27272a] flex items-center justify-center relative overflow-hidden flex-shrink-0">
-          <span className="text-[9px] font-bold text-[#52525b] absolute">{letters}</span>
-          {src && <img src={src} alt={bookId || ''} className="w-full h-full rounded-lg object-contain absolute inset-0" onError={(e) => { e.target.style.display = 'none' }} />}
+        <div className={`w-8 h-8 rounded-md flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${blurred ? 'blur-sm select-none' : ''}`} style={{ backgroundColor: bg }}>
+          {letters}
         </div>
       )
     }
 
-    return [
-      <div key={a.fingerprint || i}
-        onClick={handleClick}
-        className={`hidden md:flex items-center gap-5 px-5 py-4 rounded-xl border border-[#27272a] mb-2 transition-all relative overflow-hidden group ${blurred ? 'cursor-pointer hover:border-orange-900/40' : 'cursor-pointer hover:border-[#3f3f46] hover:bg-[#0c0c0e]/60'}`}
-        style={{ background: 'linear-gradient(135deg, #09090b 0%, #0c0c0e 100%)' }}>
-
-        <div className="flex-shrink-0 w-[72px] text-center">
-          <div className={`text-[22px] font-black text-emerald-400 leading-none tracking-tight ${blurred ? 'blur-sm select-none' : ''}`}
-            style={{ textShadow: '0 0 20px rgba(52, 211, 153, 0.15)' }}>
-            +{a.profit}%
+    const renderLeg = (bookId, betStr, odds, isMobile) => (
+      <div className="flex-1 min-w-0 bg-[#18181b] rounded-lg flex items-center gap-3" style={{ padding: isMobile ? '8px 10px' : '10px 12px' }}>
+        <div className="flex-shrink-0">{renderBookBadge(bookId)}</div>
+        <div className="min-w-0 flex-1">
+          <div className={`font-semibold text-[#fafafa] truncate leading-snug ${blurred ? 'blur-sm select-none' : ''}`} style={{ fontSize: isMobile ? 12 : 13 }}>
+            {betStr}
           </div>
-          {blurred && (
-            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-[#e87028] bg-orange-950/10 border border-orange-900/30 px-2 py-[2px] rounded-full mt-1.5">🔒 Pro</span>
-          )}
-        </div>
-
-        <div className="w-px h-10 bg-[#27272a] flex-shrink-0" />
-
-        <div className="flex-1 min-w-0">
-          <div className="text-[14px] font-semibold text-[#fafafa] truncate leading-snug">{a.game}</div>
-          <div className={`text-[12px] text-[#c2732e] font-medium mt-0.5 truncate leading-snug ${blurred ? 'blur-sm select-none' : ''}`}>
-            {cleanBet(a.betA, a.bA)} <span className="text-[#52525b] mx-1">vs</span> {cleanBet(a.betB, a.bB)}
-          </div>
-          <div className="flex items-center gap-2 mt-1.5">
-            {live ? (
-              <span className={LIVE_TAG}>● {a.liveStatus || 'LIVE'}</span>
-            ) : (
-              <span className="text-[10px] text-[#71717a] font-medium tabular-nums">{fmtTime(a.time)}</span>
-            )}
-            <span className={SPORT_TAG}>{(a.sport || '').toUpperCase()}</span>
-            {a.market && <span className={MARKET_TAG}>{a.market}</span>}
+          <div className={`font-semibold text-[#e87028] tabular-nums ${blurred ? 'blur-sm select-none' : ''}`} style={{ fontSize: isMobile ? 11 : 12 }}>
+            {odds}
           </div>
         </div>
-
-        <div className="flex-shrink-0 flex flex-col items-center gap-1.5">
-          <div className="flex flex-col items-center gap-1">
-            <ArbBookLogo bookId={a.bA} />
-            <ArbBookLogo bookId={a.bB} />
-          </div>
-          {ageSec != null && (
-            <div className={`text-[10px] font-semibold tabular-nums mt-0.5 ${isNew ? 'text-emerald-400' : 'text-[#71717a]'}`}>
-              {isNew ? (
-                <span className="flex items-center gap-1">
-                  <span className="w-[5px] h-[5px] rounded-full bg-emerald-400 animate-pulse inline-block" />
-                  NEW
-                </span>
-              ) : fmtAge(ageSec)}
-            </div>
-          )}
-        </div>
-
-        {freshness > 0 && !blurred && (
-          <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-emerald-400/60 to-emerald-400/0 transition-all duration-1000"
-            style={{ width: `${freshness * 100}%` }} />
-        )}
-      </div>,
-
-      <div key={`m-${a.fingerprint || i}`}
-        onClick={handleClick}
-        className={`md:hidden flex items-center gap-3 px-3.5 py-3 rounded-xl border border-[#27272a] mb-1.5 transition-all relative overflow-hidden ${blurred ? 'cursor-pointer hover:border-orange-900/40' : 'cursor-pointer hover:border-[#3f3f46]'}`}
-        style={{ background: 'linear-gradient(135deg, #09090b 0%, #0c0c0e 100%)' }}>
-
-        <div className="flex-shrink-0 w-[52px] text-center">
-          <div className={`text-[18px] font-black text-emerald-400 leading-none tracking-tight ${blurred ? 'blur-sm select-none' : ''}`}
-            style={{ textShadow: '0 0 16px rgba(52, 211, 153, 0.12)' }}>
-            +{a.profit}%
-          </div>
-          {blurred && (
-            <span className="inline-flex items-center gap-0.5 text-[8px] font-bold text-[#e87028] mt-1">🔒</span>
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="text-[13px] font-semibold text-[#fafafa] truncate leading-snug">{a.game}</div>
-          <div className={`text-[11px] text-[#c2732e] font-medium mt-0.5 truncate leading-snug ${blurred ? 'blur-sm select-none' : ''}`}>
-            {cleanBet(a.betA, a.bA)} <span className="text-[#52525b]">vs</span> {cleanBet(a.betB, a.bB)}
-          </div>
-          <div className="flex items-center gap-1.5 mt-1">
-            {live ? (
-              <span className={LIVE_TAG}>● {a.liveStatus || 'LIVE'}</span>
-            ) : (
-              <span className="text-[10px] text-[#71717a] font-medium tabular-nums">{fmtTime(a.time)}</span>
-            )}
-            <span className={SPORT_TAG}>{(a.sport || '').toUpperCase()}</span>
-            {a.market && <span className={MARKET_TAG}>{a.market}</span>}
-          </div>
-        </div>
-
-        <div className="flex-shrink-0 flex flex-col items-center gap-1">
-          <ArbBookLogo bookId={a.bA} />
-          <ArbBookLogo bookId={a.bB} />
-          {ageSec != null && (
-            <div className={`text-[9px] font-semibold tabular-nums ${isNew ? 'text-emerald-400' : 'text-[#71717a]'}`}>
-              {isNew ? 'NEW' : fmtAge(ageSec)}
-            </div>
-          )}
-        </div>
-
-        {freshness > 0 && !blurred && (
-          <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-emerald-400/60 to-emerald-400/0 transition-all duration-1000"
-            style={{ width: `${freshness * 100}%` }} />
-        )}
       </div>
+    )
+
+    return [
+      <button key={a.fingerprint || i} type="button"
+        onClick={handleClick}
+        className={`hidden md:block w-full text-left bg-[#0c0c0e] border border-[#27272a] rounded-xl mb-2 cursor-pointer transition-colors hover:bg-[#111114]`}
+        style={{ padding: '14px 16px' }}>
+        <div className="flex items-start justify-between mb-3">
+          <div className="min-w-0">
+            <div className="text-[15px] font-medium text-[#fafafa] truncate leading-snug">{a.game}</div>
+            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+              <span className={SPORT_TAG}>{(a.sport || '').toUpperCase()}</span>
+              {a.market && <span className={MARKET_TAG}>{a.market}</span>}
+              {live
+                ? <span className={LIVE_TAG}>● {a.liveStatus || 'LIVE'}</span>
+                : <span className="text-[10px] text-[#71717a] font-medium tabular-nums">{fmtTime(a.time)}</span>
+              }
+            </div>
+          </div>
+          <div className="flex-shrink-0 text-right ml-4">
+            <div className="text-[21px] font-bold text-emerald-400 leading-none tabular-nums">+{a.profit}%</div>
+            <div className="mt-1">{renderRowAge(a)}</div>
+          </div>
+        </div>
+        {blurred && (
+          <div className="mb-2">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#e87028] bg-orange-950/10 border border-orange-900/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
+          </div>
+        )}
+        <div className="flex gap-2">
+          {renderLeg(a.bA, cleanBet(a.betA, a.bA), a.oA, false)}
+          {renderLeg(a.bB, cleanBet(a.betB, a.bB), a.oB, false)}
+        </div>
+      </button>,
+
+      <button key={`m-${a.fingerprint || i}`} type="button"
+        onClick={handleClick}
+        className={`md:hidden w-full text-left bg-[#0c0c0e] border border-[#27272a] rounded-xl mb-2 cursor-pointer transition-colors hover:bg-[#111114]`}
+        style={{ padding: '12px' }}>
+        <div className="flex items-start justify-between mb-2">
+          <div className="min-w-0">
+            <div className="text-[13px] font-medium text-[#fafafa] truncate leading-snug">{a.game}</div>
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              <span className={SPORT_TAG}>{(a.sport || '').toUpperCase()}</span>
+              {a.market && <span className={MARKET_TAG}>{a.market}</span>}
+              {live
+                ? <span className={LIVE_TAG}>● {a.liveStatus || 'LIVE'}</span>
+                : <span className="text-[10px] text-[#71717a] font-medium tabular-nums">{fmtTime(a.time)}</span>
+              }
+            </div>
+          </div>
+          <div className="flex-shrink-0 text-right ml-3">
+            <div className="text-[18px] font-bold text-emerald-400 leading-none tabular-nums">+{a.profit}%</div>
+            <div className="mt-1">{renderRowAge(a)}</div>
+          </div>
+        </div>
+        {blurred && (
+          <div className="mb-2">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#e87028] bg-orange-950/10 border border-orange-900/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
+          </div>
+        )}
+        <div className="flex gap-2">
+          {renderLeg(a.bA, cleanBet(a.betA, a.bA), a.oA, true)}
+          {renderLeg(a.bB, cleanBet(a.betB, a.bB), a.oB, true)}
+        </div>
+      </button>
     ]
   }
 
