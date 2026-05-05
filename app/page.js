@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from './supabase'
 import { ALL_SPORTSBOOKS, ALL_SPORTSBOOK_IDS, BONUS_DROPDOWN_BOOKS } from '../lib/sportsbooks'
+import { getSportsbookUrl } from '../lib/sportsbookLinks'
 
 const TICKS = [
   {game:'PSG vs Bayern',sport:'Soccer',profit:'+5.1%',books:'Unibet / DraftKings'},
@@ -47,6 +48,17 @@ const fmtAge = (sec) => {
 
 const FREE_PROFIT_CAP = 2
 const FREE_EV_CAP = 1.5
+
+const BookLink = ({ bookId, className }) => {
+  const url = getSportsbookUrl(bookId)
+  if (!url) return <span className={className}>{bookId}</span>
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer"
+      className={`${className} no-underline hover:text-[#e87028] transition-colors cursor-pointer`}
+      onClick={(e) => e.stopPropagation()}
+    >{bookId}</a>
+  )
+}
 
 export default function Home() {
   const [view, setView] = useState('marketing')
@@ -446,12 +458,12 @@ export default function Home() {
           </div>
         </div>
         <div className={blurred ? 'relative' : ''}>
-          <div className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]">{a.bA}</div>
+          <BookLink bookId={a.bA} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
           <div className={`text-[13px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betA, a.bA)}</div>
           <div className={`text-[12px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oA}</div>
         </div>
         <div className={blurred ? 'relative' : ''}>
-          <div className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]">{a.bB}</div>
+          <BookLink bookId={a.bB} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
           <div className={`text-[13px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betB, a.bB)}</div>
           <div className={`text-[12px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oB}</div>
         </div>
@@ -486,12 +498,12 @@ export default function Home() {
         </div>
         <div className="flex gap-2">
           <div className={`flex-1 bg-[#0c0c0e] rounded-lg p-2 ${blurred ? 'relative' : ''}`}>
-            <div className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]">{a.bA}</div>
+            <BookLink bookId={a.bA} className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
             <div className={`text-[12px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betA, a.bA)}</div>
             <div className={`text-[11px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oA}</div>
           </div>
           <div className={`flex-1 bg-[#0c0c0e] rounded-lg p-2 ${blurred ? 'relative' : ''}`}>
-            <div className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]">{a.bB}</div>
+            <BookLink bookId={a.bB} className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
             <div className={`text-[12px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betB, a.bB)}</div>
             <div className={`text-[11px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oB}</div>
           </div>
@@ -524,7 +536,7 @@ export default function Home() {
         </div>
         <div className={blurred ? 'relative' : ''}>
           <div className={`text-[13px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{e.bet}</div>
-          <div className={`text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{e.bookmaker}</div>
+          <BookLink bookId={e.bookmaker} className={`text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mt-[2px] block ${blurred ? 'blur-sm select-none' : ''}`} />
         </div>
         <div className={blurred ? 'blur-sm select-none' : ''}>
           <div className="text-[14px] font-bold text-[#e87028]">{e.odds}</div>
@@ -560,7 +572,7 @@ export default function Home() {
         <div className={`bg-[#0c0c0e] rounded-lg p-2 ${blurred ? 'relative' : ''}`}>
           <div className={`text-[12px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{e.bet}</div>
           <div className="flex items-center gap-3 mt-1">
-            <div className={`text-[10px] text-[#71717a] font-semibold uppercase tracking-wide ${blurred ? 'blur-sm select-none' : ''}`}>{e.bookmaker}</div>
+            <BookLink bookId={e.bookmaker} className={`text-[10px] text-[#71717a] font-semibold uppercase tracking-wide ${blurred ? 'blur-sm select-none' : ''}`} />
             <div className={`text-[12px] text-[#e87028] font-bold ${blurred ? 'blur-sm select-none' : ''}`}>{e.odds}</div>
             <div className={`text-[10px] text-[#a1a1aa] font-medium ${blurred ? 'blur-sm select-none' : ''}`}>Fair: {e.fairOdds}</div>
             <div className="text-[10px] text-[#fafafa] font-medium">Win: {e.winProb}%</div>
@@ -1284,12 +1296,12 @@ export default function Home() {
           </div>
         </div>
         <div>
-          <div className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]">{m.bA}</div>
+          <BookLink bookId={m.bA} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
           <div className="text-[13px] font-semibold leading-tight">{m.betA}</div>
           <div className="text-[12px] text-[#e87028] font-semibold mt-[2px]">{m.oA}</div>
         </div>
         <div>
-          <div className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]">{m.bB}</div>
+          <BookLink bookId={m.bB} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
           <div className="text-[13px] font-semibold leading-tight">{m.betB}</div>
           <div className="text-[12px] text-[#e87028] font-semibold mt-[2px]">{m.oB}</div>
         </div>
@@ -1324,12 +1336,12 @@ export default function Home() {
         </div>
         <div className="flex gap-2">
           <div className="flex-1 bg-[#0c0c0e] rounded-lg p-2">
-            <div className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]">{m.bA}</div>
+            <BookLink bookId={m.bA} className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
             <div className="text-[12px] font-semibold leading-tight">{m.betA}</div>
             <div className="text-[11px] text-[#e87028] font-semibold mt-[2px]">{m.oA}</div>
           </div>
           <div className="flex-1 bg-[#0c0c0e] rounded-lg p-2">
-            <div className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]">{m.bB}</div>
+            <BookLink bookId={m.bB} className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
             <div className="text-[12px] font-semibold leading-tight">{m.betB}</div>
             <div className="text-[11px] text-[#e87028] font-semibold mt-[2px]">{m.oB}</div>
           </div>
@@ -1941,7 +1953,7 @@ export default function Home() {
               ].map((b,i) => (
                 <div key={i} className="flex items-start justify-between bg-[#121214] border border-[#27272a] rounded-xl px-3 py-[10px] mb-[5px]">
                   <div className="flex-1 min-w-0 pr-2">
-                    <div className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]">{b.name}</div>
+                    <BookLink bookId={b.name} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px] block" />
                     <div className="text-[13px] font-semibold leading-tight">{b.bet}</div>
                   </div>
                   <div className="text-right flex-shrink-0">
