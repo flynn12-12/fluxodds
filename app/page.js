@@ -451,80 +451,123 @@ export default function Home() {
   // The only difference visually: live arbs show liveStatus tag instead of fmtTime.
   const renderArbRow = (a, i, { live = false } = {}) => {
     const blurred = shouldBlurArb(a)
+    const handleClick = () => !blurred ? setSelectedArb(a) : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))
+    const ageSec = a.firstSeenAt ? liveAgeSeconds(a.firstSeenAt) : null
+    const isNew = ageSec != null && ageSec < 30
+    const freshness = ageSec != null ? Math.max(0, 1 - ageSec / 600) : 0
+
+    const ArbBookLogo = ({ bookId }) => {
+      const src = bookId ? `/sportsbooks/${bookId.toLowerCase()}.svg` : null
+      const letters = bookId ? bookId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase() : '??'
+      return (
+        <div className="w-8 h-8 rounded-lg bg-[#18181b] border border-[#27272a] flex items-center justify-center relative overflow-hidden flex-shrink-0">
+          <span className="text-[9px] font-bold text-[#52525b] absolute">{letters}</span>
+          {src && <img src={src} alt={bookId || ''} className="w-full h-full rounded-lg object-contain absolute inset-0" onError={(e) => { e.target.style.display = 'none' }} />}
+        </div>
+      )
+    }
+
     return [
       <div key={a.fingerprint || i}
-        onClick={() => !blurred ? setSelectedArb(a) : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))}
-        className={`arb-row border-b border-[#27272a] items-center transition-colors ${blurred ? 'cursor-pointer hover:bg-orange-950/5' : 'cursor-pointer hover:bg-[#0c0c0e]'} hidden md:grid px-5 py-[12px]`}
-        style={{gridTemplateColumns:'1.6fr 1.4fr 1.4fr 90px 100px'}}>
-        <div>
-          <div className="text-[13px] font-semibold mb-[4px]">{a.game}</div>
-          <div className="flex items-center gap-[6px] flex-wrap">
-            <span className={SPORT_TAG}>{(a.sport || '').toUpperCase()}</span>
-            {a.market && <span className={MARKET_TAG}>{a.market}</span>}
+        onClick={handleClick}
+        className={`hidden md:flex items-center gap-5 px-5 py-4 rounded-xl border border-[#27272a] mb-2 transition-all relative overflow-hidden group ${blurred ? 'cursor-pointer hover:border-orange-900/40' : 'cursor-pointer hover:border-[#3f3f46] hover:bg-[#0c0c0e]/60'}`}
+        style={{ background: 'linear-gradient(135deg, #09090b 0%, #0c0c0e 100%)' }}>
+
+        <div className="flex-shrink-0 w-[72px] text-center">
+          <div className={`text-[22px] font-black text-emerald-400 leading-none tracking-tight ${blurred ? 'blur-sm select-none' : ''}`}
+            style={{ textShadow: '0 0 20px rgba(52, 211, 153, 0.15)' }}>
+            +{a.profit}%
+          </div>
+          {blurred && (
+            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-[#e87028] bg-orange-950/10 border border-orange-900/30 px-2 py-[2px] rounded-full mt-1.5">🔒 Pro</span>
+          )}
+        </div>
+
+        <div className="w-px h-10 bg-[#27272a] flex-shrink-0" />
+
+        <div className="flex-1 min-w-0">
+          <div className="text-[14px] font-semibold text-[#fafafa] truncate leading-snug">{a.game}</div>
+          <div className={`text-[12px] text-[#c2732e] font-medium mt-0.5 truncate leading-snug ${blurred ? 'blur-sm select-none' : ''}`}>
+            {cleanBet(a.betA, a.bA)} <span className="text-[#52525b] mx-1">vs</span> {cleanBet(a.betB, a.bB)}
+          </div>
+          <div className="flex items-center gap-2 mt-1.5">
             {live ? (
               <span className={LIVE_TAG}>● {a.liveStatus || 'LIVE'}</span>
             ) : (
-              <span className="text-[11px] text-[#a1a1aa] font-medium">{fmtTime(a.time)}</span>
+              <span className="text-[10px] text-[#71717a] font-medium tabular-nums">{fmtTime(a.time)}</span>
             )}
+            <span className={SPORT_TAG}>{(a.sport || '').toUpperCase()}</span>
+            {a.market && <span className={MARKET_TAG}>{a.market}</span>}
           </div>
         </div>
-        <div className={blurred ? 'relative' : ''}>
-          <BookLink bookId={a.bA} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]" />
-          <div className={`text-[13px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betA, a.bA)}</div>
-          <div className={`text-[12px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oA}</div>
-        </div>
-        <div className={blurred ? 'relative' : ''}>
-          <BookLink bookId={a.bB} className="text-[10px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]" />
-          <div className={`text-[13px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betB, a.bB)}</div>
-          <div className={`text-[12px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oB}</div>
-        </div>
-        <div>
-          <div className="text-[18px] font-black text-emerald-400 leading-none">+{a.profit}%</div>
-          {renderRowAge(a)}
-        </div>
-        {blurred ? (
-          <div className="flex items-center justify-end">
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#e87028] bg-orange-950/10 border border-orange-900/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
+
+        <div className="flex-shrink-0 flex flex-col items-center gap-1.5">
+          <div className="flex flex-col items-center gap-1">
+            <ArbBookLogo bookId={a.bA} />
+            <ArbBookLogo bookId={a.bB} />
           </div>
-        ) : (
-          <div className="text-[12px] text-[#71717a] font-medium">${a.sA} / ${a.sB}</div>
+          {ageSec != null && (
+            <div className={`text-[10px] font-semibold tabular-nums mt-0.5 ${isNew ? 'text-emerald-400' : 'text-[#71717a]'}`}>
+              {isNew ? (
+                <span className="flex items-center gap-1">
+                  <span className="w-[5px] h-[5px] rounded-full bg-emerald-400 animate-pulse inline-block" />
+                  NEW
+                </span>
+              ) : fmtAge(ageSec)}
+            </div>
+          )}
+        </div>
+
+        {freshness > 0 && !blurred && (
+          <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-emerald-400/60 to-emerald-400/0 transition-all duration-1000"
+            style={{ width: `${freshness * 100}%` }} />
         )}
       </div>,
+
       <div key={`m-${a.fingerprint || i}`}
-        onClick={() => !blurred ? setSelectedArb(a) : (user ? handleCheckout() : (setLoginTab('signup'), setLoginOpen(true)))}
-        className={`md:hidden flex flex-col gap-2 px-4 py-3 border-b border-[#27272a] transition-colors ${blurred ? 'cursor-pointer hover:bg-orange-950/5' : 'cursor-pointer hover:bg-[#0c0c0e]'}`}>
-        <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-semibold mb-1 truncate">{a.game}</div>
-            <div className="flex items-center gap-[5px] flex-wrap">
-              <span className={SPORT_TAG}>{(a.sport || '').toUpperCase()}</span>
-              {a.market && <span className={MARKET_TAG}>{a.market}</span>}
-              {live ? <span className={LIVE_TAG}>● {a.liveStatus || 'LIVE'}</span> : <span className="text-[10px] text-[#a1a1aa] font-medium">{fmtTime(a.time)}</span>}
+        onClick={handleClick}
+        className={`md:hidden flex items-center gap-3 px-3.5 py-3 rounded-xl border border-[#27272a] mb-1.5 transition-all relative overflow-hidden ${blurred ? 'cursor-pointer hover:border-orange-900/40' : 'cursor-pointer hover:border-[#3f3f46]'}`}
+        style={{ background: 'linear-gradient(135deg, #09090b 0%, #0c0c0e 100%)' }}>
+
+        <div className="flex-shrink-0 w-[52px] text-center">
+          <div className={`text-[18px] font-black text-emerald-400 leading-none tracking-tight ${blurred ? 'blur-sm select-none' : ''}`}
+            style={{ textShadow: '0 0 16px rgba(52, 211, 153, 0.12)' }}>
+            +{a.profit}%
+          </div>
+          {blurred && (
+            <span className="inline-flex items-center gap-0.5 text-[8px] font-bold text-[#e87028] mt-1">🔒</span>
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="text-[13px] font-semibold text-[#fafafa] truncate leading-snug">{a.game}</div>
+          <div className={`text-[11px] text-[#c2732e] font-medium mt-0.5 truncate leading-snug ${blurred ? 'blur-sm select-none' : ''}`}>
+            {cleanBet(a.betA, a.bA)} <span className="text-[#52525b]">vs</span> {cleanBet(a.betB, a.bB)}
+          </div>
+          <div className="flex items-center gap-1.5 mt-1">
+            {live ? (
+              <span className={LIVE_TAG}>● {a.liveStatus || 'LIVE'}</span>
+            ) : (
+              <span className="text-[10px] text-[#71717a] font-medium tabular-nums">{fmtTime(a.time)}</span>
+            )}
+            <span className={SPORT_TAG}>{(a.sport || '').toUpperCase()}</span>
+            {a.market && <span className={MARKET_TAG}>{a.market}</span>}
+          </div>
+        </div>
+
+        <div className="flex-shrink-0 flex flex-col items-center gap-1">
+          <ArbBookLogo bookId={a.bA} />
+          <ArbBookLogo bookId={a.bB} />
+          {ageSec != null && (
+            <div className={`text-[9px] font-semibold tabular-nums ${isNew ? 'text-emerald-400' : 'text-[#71717a]'}`}>
+              {isNew ? 'NEW' : fmtAge(ageSec)}
             </div>
-          </div>
-          <div className="text-right flex-shrink-0 ml-3">
-            <div className="text-[18px] font-black text-emerald-400 leading-none">+{a.profit}%</div>
-            {renderRowAge(a)}
-          </div>
+          )}
         </div>
-        <div className="flex gap-2">
-          <div className={`flex-1 bg-[#0c0c0e] rounded-lg p-2 ${blurred ? 'relative' : ''}`}>
-            <BookLink bookId={a.bA} className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]" />
-            <div className={`text-[12px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betA, a.bA)}</div>
-            <div className={`text-[11px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oA}</div>
-          </div>
-          <div className={`flex-1 bg-[#0c0c0e] rounded-lg p-2 ${blurred ? 'relative' : ''}`}>
-            <BookLink bookId={a.bB} className="text-[9px] text-[#71717a] font-semibold uppercase tracking-wide mb-[2px]" />
-            <div className={`text-[12px] font-semibold leading-tight ${blurred ? 'blur-sm select-none' : ''}`}>{cleanBet(a.betB, a.bB)}</div>
-            <div className={`text-[11px] text-[#e87028] font-semibold mt-[2px] ${blurred ? 'blur-sm select-none' : ''}`}>{a.oB}</div>
-          </div>
-        </div>
-        {blurred ? (
-          <div className="flex justify-center">
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#e87028] bg-orange-950/10 border border-orange-900/30 px-2 py-[3px] rounded-full">🔒 Pro</span>
-          </div>
-        ) : (
-          <div className="text-[11px] text-[#a1a1aa] font-medium">Stakes: ${a.sA} / ${a.sB}</div>
+
+        {freshness > 0 && !blurred && (
+          <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-emerald-400/60 to-emerald-400/0 transition-all duration-1000"
+            style={{ width: `${freshness * 100}%` }} />
         )}
       </div>
     ]
